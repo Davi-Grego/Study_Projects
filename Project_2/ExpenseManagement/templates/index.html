@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciamento de Gastos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Gerencidor de Gastos</h1>
+        <nav>
+            <ul>
+                <li><a href="#">Início</a></li>
+                <li><a href="/register">Registrar-se</a></li>
+                <li><a href="/login">Login</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section class="dashboard">
+        <h2>Resumo das Finanças</h2>
+        <div class="summary">
+            <div class="card">
+                <h3>Total de Despesas</h3>
+                <p class="value">R$ {{ total_despesas }}</p>
+            </div>
+            <div class="card">
+                <h3>Renda Mensal</h3>
+                <p class="value">R$ {{ renda_mensal }}</p>
+            </div>
+            <div class="card">
+                <h3>Saldo Atual</h3>
+                <p class="value">R$ {{ saldo_atual }}</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>Gerenciador de Gastos &copy; 2024</p>
+    </footer>
+</body>
+</html>
