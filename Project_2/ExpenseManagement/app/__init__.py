@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, secret_key
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_bcrypt import Bcrypt  # Importando o Flask-Bcrypt
@@ -18,6 +18,7 @@ login_manager = LoginManager()
 
 def create_app():
     app = Flask(__name__)
+    app.secret_key = 'chave_de_criptografia'
     app.config.from_object(Config)
     db.init_app(app)
     migrate.init_app(app, db)

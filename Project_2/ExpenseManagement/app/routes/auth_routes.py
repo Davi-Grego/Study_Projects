@@ -54,6 +54,7 @@ def login():
         # Autentica o usuário
         login_user(usuario)
         return jsonify({'message': 'Login bem-sucedido!'}), 200
+        return redirect("/area_logada")
     else:
         return jsonify({'message': 'Email ou senha inválidos'}), 401
 
