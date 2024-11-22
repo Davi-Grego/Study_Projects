@@ -1,8 +1,11 @@
-{% extends "base.html" %} {% block titulo %}
+{% extends "base.html" %} 
+
+{% block title %}
 <title>Login</title>
 {%endblock%}
 
-<form method="POST">
+{% block content %}
+<form method="POST" id = formLogin>
   <div>
     <label for="tx-email">Email:</label><br />
     <input type="text" name="email" id="tx-email" />
@@ -14,3 +17,4 @@
   <button type="submit">Enviar</button>
   <p class="urgente">{{ erro }}</p>
 </form>
+{% endblock %} 
