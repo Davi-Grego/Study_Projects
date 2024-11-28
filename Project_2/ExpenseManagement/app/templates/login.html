@@ -1,0 +1,41 @@
+{% extends "base.html" %} 
+
+{% block title %}
+<title>Login</title>
+{%endblock%}
+
+{% block content %}
+<div class="container" style="max-width: 400px;">
+    <h2 class="text-center mb-4">Login</h2>
+
+    <form method ="POST" action="{{ url_for('auth.login') }}" >
+        <!-- Campo de Usuário -->
+        <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input type="text" class="form-control" id="email" name="email" required>
+        </div>
+
+        <!-- Campo de Senha -->
+        <div class="mb-3">
+            <label for="password" class="form-label">Senha</label>
+            <input type="password" class="form-control" id="password" name="password" required>
+        </div>
+
+        <!-- Mensagem de erro (se houver) -->
+        {% if error %}
+        <div class="alert alert-danger" role="alert">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <!-- Botão de login -->
+        <div class="text-center">
+            <button type="submit" class="btn btn-primary btn-lg">Entrar</button>
+        </div>
+    </form>
+
+    <div class="mt-4 text-center">
+        <p>Não tem uma conta? <a href="#">Cadastre-se</a></p>
+    </div>
+</div>
+{% endblock %}

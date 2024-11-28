@@ -75,3 +75,9 @@ footer {
     align-self: center;
     text-align: left;
 }
+
+#links{
+    border-color: #333;
+    background-color: #f4f4f9;
+    color: black;
+}
