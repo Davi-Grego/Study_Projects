@@ -22,13 +22,22 @@ class User(db.Model):
     def set_password(self, senha):
         self.senha_hash = generate_password_hash(senha)
     
-    # Método para verificar a senha
+
     def verify_password(self, senha):
-        return check_password_hash(self.senha_hash, senha)
+        if not self.senha_hash:
+            return False  
+        if check_password_hash(self.senha_hash, senha):
+            return True
+        else:
+            return False
 
     # Método de representação da instância 
     def __repr__(self):
         return f"<User {self.nome}, Email {self.email}>"
+
+    def addNewUser(self):
+        db.session.add(self)
+        db.session.commit()
 
     # Método de conversão para dicionário 
     def to_dict(self):

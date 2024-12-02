@@ -15,31 +15,33 @@ def index():
 def login():
     if request.method == 'POST':
         email = request.form.get('email')
-        senha = request.form.get('senha')
+        senha = request.form.get('password')
 
         # Buscar o usuário pelo e-mail
         try:
             user = User.query.filter_by(email=email).first()
+            print("USER ENCONTRADO")
         except:
-            return redirect('/registrar')
+            flash('Usuário não encontrado. Por favor, registre-se.', 'danger')
+            return redirect("/registrar")      
 
         if user and user.verify_password(senha):
-            # Autenticação bem-sucedida
-            # Salvar informações do usuário na sessão (exemplo com flask-login)
-            # Aqui você poderia usar o Flask-Login para gerenciar sessões de usuários
-
-            # Exemplo básico de como você pode fazer isso:
-            # session['user_id'] = user.id  # Isso é apenas um exemplo
-
             flash('Login bem-sucedido!', 'success')
-            return redirect(url_for('user.profile'))  # Redireciona para a página de perfil
-
+            return redirect('/aaaaaaaa')  # Redireciona para a página de perfil
         else:
-            flash('E-mail ou senha incorretos. Tente novamente.', 'danger')
-            return render_template('login.html', error='E-mail ou senha incorretos.')
-
+            print("algo deu errado")
+            
     return render_template('login.html')
 
-@auth_bp.route('/registrar')
-def registrar():
+@auth_bp.route('/registrar', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        email = request.form.get("email")
+        name = request.form.get("name")
+        password = request.form.get("password")
+
+        user = User(name, email, password)
+        User.addNewUser(user)
+        return redirect ("/login")
+
     return render_template('register.html')
