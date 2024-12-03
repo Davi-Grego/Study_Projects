@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
-from flask_login import login_user
+from flask_login import login_user, logout_user, login_required, current_user
 from app.models import User
 
 
@@ -13,9 +13,16 @@ def index():
     return render_template('index.html')
 
 @auth_bp.route('/dash', methods=['GET', 'POST'])
+@login_required
 def dash():
     ...
-    return render_template('dash.html')
+    return render_template('dash.html', user=current_user)
+
+@auth_bp.route('/logout', methods=['GET'])
+@login_required
+def logout():
+    logout_user()
+    return redirect('/')
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
