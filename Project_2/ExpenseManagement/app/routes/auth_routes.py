@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
+from flask_login import login_user
 from app.models import User
 
 
@@ -10,6 +11,11 @@ auth_bp = Blueprint('auth', __name__)
 def index():
     ...
     return render_template('index.html')
+
+@auth_bp.route('/dash', methods=['GET', 'POST'])
+def dash():
+    ...
+    return render_template('dash.html')
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -26,8 +32,9 @@ def login():
             return redirect("/registrar")      
 
         if user and user.verify_password(senha):
+            login_user(user)
             flash('Login bem-sucedido!', 'success')
-            return redirect('/aaaaaaaa')  # Redireciona para a página de perfil
+            return redirect('/dash')  # Redireciona para a página de perfil
         else:
             print("algo deu errado")
             

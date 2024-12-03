@@ -11,7 +11,7 @@
 
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <div class="container">
-        <a class="navbar-brand" href="#">Gerenciamento de Gastos</a>
+        <a class="navbar-brand" href="/">Gerenciamento de Gastos</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -20,15 +20,24 @@
                 <li class="nav-item">
                     <a class="nav-link active" href="/">Home</a>
                 </li>
+                {% if current_user.is_authenticated %}
+                <li class="nav-item">
+                    <a class="nav-link" href="/dash">DashBoard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/logout">Logout</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/config">Configurações</a>
+                </li>
+                {% else %}
                 <li class="nav-item">
                     <a class="nav-link" href="/login">Login</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="/registrar">Registrar</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Configurações</a>
-                </li>
+                {% endif %}
             </ul>
         </div>
     </div>
