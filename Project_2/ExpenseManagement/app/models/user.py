@@ -12,6 +12,7 @@ class User(UserMixin,db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     senha_hash = db.Column(db.String(128), nullable=False)
     data_criacao = db.Column(db.DateTime, default=db.func.current_timestamp())
+    expenses = db.relationship('Expense', backref='user', lazy=True)
 
     # Construtor da classe 
     def __init__(self, nome, email, senha):

@@ -1,5 +1,5 @@
-from db import db
-from models import User
+from app.db import db
+from app.models import User
 
 class Expense(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -8,7 +8,8 @@ class Expense(db.Model):
     expense_date = db.Column(db.DateTime, nullable=False)
     category = db.Column(db.String(50), nullable=False)
     expense_type = db.Column(db.String(50), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    
 
     def __init__(self, description, amount, expense_date, category, expense_type, user_id):
         self.description = description
