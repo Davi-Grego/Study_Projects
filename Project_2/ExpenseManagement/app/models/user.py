@@ -1,5 +1,5 @@
 from flask import current_app
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash
 from app.db import db
 from flask_login import UserMixin
 
@@ -23,28 +23,3 @@ class User(UserMixin,db.Model):
     def set_password(self, senha):
         self.senha_hash = generate_password_hash(senha)
     
-
-    def verify_password(self, senha):
-        if not self.senha_hash:
-            return False  
-        if check_password_hash(self.senha_hash, senha):
-            return True
-        else:
-            return False
-
-    # Método de representação da instância 
-    def __repr__(self):
-        return f"<User {self.nome}, Email {self.email}>"
-
-    def addNewUser(self):
-        db.session.add(self)
-        db.session.commit()
-
-    # Método de conversão para dicionário 
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "nome": self.nome,
-            "email": self.email,
-            "data_criacao": self.data_criacao
-        }

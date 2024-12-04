@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from app.models import User
+from app.services.user_service import UserService
 
 
 
@@ -32,16 +33,16 @@ def login():
 
         # Buscar o usuário pelo e-mail
         try:
-            user = User.query.filter_by(email=email).first()
+            user = UserService.get_user_by_email(email)
             print("USER ENCONTRADO")
         except:
             flash('Usuário não encontrado. Por favor, registre-se.', 'danger')
             return redirect("/registrar")      
 
-        if user and user.verify_password(senha):
+        if user and UserService.verify_password(user, senha):
             login_user(user)
             flash('Login bem-sucedido!', 'success')
-            return redirect('/dash')  # Redireciona para a página de perfil
+            return redirect('/')
         else:
             print("algo deu errado")
             
@@ -55,7 +56,7 @@ def register():
         password = request.form.get("password")
 
         user = User(name, email, password)
-        User.addNewUser(user)
+        UserService.addNewUser(user)
         return redirect ("/login")
 
     return render_template('register.html')
