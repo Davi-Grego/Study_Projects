@@ -14,7 +14,7 @@ class ExpenseService:
                 expense_type=expense_type,
                 user_id=user_id
             )
-            
+
             db.session.add(expense)
             db.session.commit()
         except Exception as e:
@@ -27,9 +27,14 @@ class ExpenseService:
         db.session.delete(expense)
 
 
-    @staticmethod
-    def get_exepenses(user_id):
+    
+    def get_expenses(user_id):
         return Expense.query.filter_by(user_id=user_id).all()
     
-        
+    @staticmethod
+    def get_total_amount(user_id):
+        expenses = ExpenseService.get_expenses(user_id)
+        total_amount = sum(expense.amount for expense in expenses)
+
+        return total_amount
 
