@@ -15,11 +15,10 @@ class UserService:
             return False
         
     @staticmethod
-    def addNewUser(nome, email, senha):
-        new_user = User(nome=nome, email=email, senha=senha)
+    def addNewUser(new_user):
         db.session.add(new_user)
         db.session.commit()
-        db.session.refresh()
+
 
     @staticmethod
     def get_user_by_email(email):
