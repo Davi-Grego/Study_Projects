@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, current_app
 from flask_login import login_required, current_user
+
 from app.models.expenses import Expense
 from app.services.expense_service import ExpenseService
 from datetime import datetime
@@ -17,8 +18,6 @@ def AddExpense():
         expense_type = request.form.get("type")
         user_id = current_user.id
 
-        expense = Expense(description=description, amount=amont, expense_date= expense_date, 
-            category=category, expense_type=expense_type, user_id=user_id )
-    
-        ExpenseService.add_new_expense(expense)
+        
+        ExpenseService.add_new_expense(description, amont, expense_date, category, expense_type, user_id)
         return redirect('/dash')

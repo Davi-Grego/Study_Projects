@@ -16,9 +16,12 @@ class UserService:
         
     @staticmethod
     def addNewUser(new_user):
-        db.session.add(new_user)
-        db.session.commit()
-
+        try:
+            if isinstance(new_user, User):
+                db.session.add(new_user)
+                db.session.commit()
+        except Exception as e:
+            db.session.rollback()
 
     @staticmethod
     def get_user_by_email(email):
