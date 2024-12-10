@@ -6,7 +6,7 @@ from app.services.earnings_services import EarningsServices
 
 earnings_bp  = Blueprint('earningRoute', __name__)
 
-@earnings_bp.route('/addEarning', method=['POST'])
+@earnings_bp.route('/addEarning', methods=['POST'])
 def AddEarning():
     description =  request.form.get('description')
     amount = request.form.get('amount')
