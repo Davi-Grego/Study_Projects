@@ -5,10 +5,12 @@ block content %}
   <p class="lead">De uma olhada nas suas despesas e em seu saldo atual:</p>
 
   <!-- Exemplo de Cards de Status -->
-  <div class="row justify-content-center mt-4" >
-
-    <div class="col-md-4" >
-      <div class="card text-white bg-success mb-3" style="box-shadow: 0 0 10px rgba(0, 0, 0, 0.699);">
+  <div class="row justify-content-center mt-4">
+    <div class="col-md-4">
+      <div
+        class="card text-white bg-success mb-3"
+        style="box-shadow: 0 0 10px rgba(0, 0, 0, 0.699)"
+      >
         <div class="card-header">Saldo Atual</div>
         <div class="card-body">
           <h5 class="card-title"></h5>
@@ -19,7 +21,10 @@ block content %}
     </div>
 
     <div class="col-md-4">
-      <div class="card text-white bg-danger mb-3" style="box-shadow: 0 0 10px rgba(0, 0, 0, 0.699);">
+      <div
+        class="card text-white bg-danger mb-3"
+        style="box-shadow: 0 0 10px rgba(0, 0, 0, 0.699)"
+      >
         <div class="card-header">Despesas Totais</div>
         <div class="card-body">
           <h5 class="card-title"></h5>
@@ -28,13 +33,23 @@ block content %}
         </div>
       </div>
     </div>
-    
   </div>
   <!-- botao de exibicao de usuario -->
 
   <div class="mt-5">
     <button
-      class="btn btn-primary"
+      href="#"
+      class="btn btn-outline-success"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#earningForm"
+      aria-expanded="false"
+      aria-controls="earningForm"
+    >
+      Adicionar Ganho
+    </button>
+    <button
+      class="btn btn-outline-danger"
       type="button"
       data-bs-toggle="collapse"
       data-bs-target="#myForm"
@@ -43,74 +58,155 @@ block content %}
     >
       Adicionar Despesa
     </button>
-    <button href="#" class="btn btn-secondary">Ver Relatórios</button>
   </div>
 
-    <!-- fromulario econdido -->
-    <div class="collapse mt-3" id="myForm">
-      <form class="row g-3 col" method="POST" action="{{ url_for('expenseRoute.AddExpense') }}">
-        <div class="col-md-4">
-          <label for="validationDefault01" class="form-label">Descrição</label>
-          <input
-            type="text"
-            class="form-control"
-            id="validationDefault01"
-            required
-            name="description"
-          />
-        </div>
-  
-        <div class="col-md-4">
-          <label for="valor" class="form-label">Valor (R$)</label>
+  <!-- fromulario econdido -->
+  <div class="collapse mt-3" id="earningForm">
+    <form
+      class="row g-3 col"
+      method="POST"
+      action="{{ url_for('earningRoute.AddEarning') }}"
+    >
+      <div class="col-md-6">
+        <label for="validationDefault01" class="form-label">Descrição</label>
+        <input
+          type="text"
+          class="form-control"
+          id="validationDefault01"
+          required
+          name="description"
+        />
+      </div>
+
+      <div class="col-md-6">
+        <label for="valor" class="form-label">Valor (R$)</label>
         <input
           type="number"
           class="form-control"
           id="valor"
           name="amont"
-          step="0.01" 
-          min="0"  
+          step="0.01"
+          min="0"
           required
           placeholder="0.00"
         />
-        </div>
-  
-        <div class="col-md-4">
-          <label for="validationDefaultUsername" class="form-label">Tipo</label>
-          <div class="input-group">
-            <select class="form-select" id="validationDefault04" name="type" required>
-              <option selected disabled value="" >Choose...</option>
-              <option>Fixo</option>
-              <option>Variavel</option>
-            </select>
-          </div>
-        </div>
-  
-        <div class="col-md-6">
-          <label for="validationDefault03" class="form-label"
-            >Data da Compra</label
-          >
+      </div>
+
+      <div class="col-md-6">
+        <label for="validationDefault04" class="form-label">Fonte</label>
+        <div class="input-group">
           <input
-            type="date"
+            type="text"
             class="form-control"
-            id="validationDefault03"
+            id="validationDefault01"
             required
-            name="date_expense"
+            name="source"
           />
         </div>
-  
-        <div class="col-md-6">
-          <label for="validationDefault04" class="form-label">Categoria</label>
-          <div class="input-group">
-            <select class="form-select" id="validationDefault04" name="category" required>
-              <option selected disabled value="">Choose...</option>
-              <option>Comida</option>
-            </select>
-          </div>
+      </div>
+
+
+      <div class="col-6">
+        <label for="validationDefault03" class="form-label">Data do Ganho</label>
+        <input
+          type="date"
+          class="form-control"
+          id="validationDefault03"
+          required
+          name="date_expense"
+        />
+      </div>
+
+
+
+      <div class="col-12">
+        <button class="btn btn-primary" type="submit">Adicionar Ganho</button>
+      </div>
+      <hr class="hr" />
+    </form>
+  </div>
+
+  <!-- fromulario econdido -->
+  <div class="collapse mt-3" id="myForm">
+    <form
+      class="row g-3 col"
+      method="POST"
+      action="{{ url_for('expenseRoute.AddExpense') }}"
+    >
+      <div class="col-md-4">
+        <label for="validationDefault01" class="form-label">Descrição</label>
+        <input
+          type="text"
+          class="form-control"
+          id="validationDefault01"
+          required
+          name="description"
+        />
+      </div>
+
+      <div class="col-md-4">
+        <label for="valor" class="form-label">Valor (R$)</label>
+        <input
+          type="number"
+          class="form-control"
+          id="valor"
+          name="amont"
+          step="0.01"
+          min="0"
+          required
+          placeholder="0.00"
+        />
+      </div>
+
+      <div class="col-md-4">
+        <label for="validationDefaultUsername" class="form-label">Tipo</label>
+        <div class="input-group">
+          <select
+            class="form-select"
+            id="validationDefault04"
+            name="type"
+            required
+          >
+            <option selected disabled value="">Choose...</option>
+            <option>Fixo</option>
+            <option>Variavel</option>
+          </select>
         </div>
-        <div class="col-12">
-          <button class="btn btn-primary" type="submit">Submit form</button>
+      </div>
+
+      <div class="col-md-6">
+        <label for="validationDefault03" class="form-label"
+          >Data da Compra</label
+        >
+        <input
+          type="date"
+          class="form-control"
+          id="validationDefault03"
+          required
+          name="date_expense"
+        />
+      </div>
+
+      <div class="col-md-6">
+        <label for="validationDefault04" class="form-label">Categoria</label>
+        <div class="input-group">
+          <select
+            class="form-select"
+            id="validationDefault04"
+            name="category"
+            required
+          >
+            <option selected disabled value="">Choose...</option>
+            <option>Comida</option>
+          </select>
         </div>
       </form>
     </div>
+      </div>
+      <div class="col-12">
+        <button class="btn btn-primary" type="submit">Adicionar despesa</button>
+      </div>
+    </form>
+  </div>
 </div>
 {% endblock %}
