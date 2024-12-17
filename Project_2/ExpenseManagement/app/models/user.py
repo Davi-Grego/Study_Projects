@@ -23,4 +23,3 @@ class User(UserMixin,db.Model):
     # Método para criptografar a senha
     def set_password(self, senha):
         self.senha_hash = generate_password_hash(senha)
-    
