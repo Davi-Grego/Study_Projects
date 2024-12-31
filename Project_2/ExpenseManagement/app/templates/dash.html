@@ -15,10 +15,25 @@ block content %}
         <div class="card-body">
           <h5 class="card-title"></h5>
           <p class="card-text">Seu saldo atual disponível.</p>
-          <p>5.000</p>
+          <p>{{ Utils.calculate_balance(current_user.id) }}</p>
         </div>
       </div>
     </div>
+
+    <div class="col-md-4">
+      <div
+        class="card text-white bg-success mb-3"
+        style="box-shadow: 0 0 10px rgba(0, 0, 0, 0.699)"
+      >
+        <div class="card-header">Ganhos Totais</div>
+        <div class="card-body">
+          <h5 class="card-title"></h5>
+          <p class="card-text">O total dos seus ganhos no mês.</p>
+          <p>{{ EarningsServices.get_total_amount(current_user.id) }}</p>
+        </div>
+      </div>
+    </div>
+  
 
     <div class="col-md-4">
       <div
@@ -29,7 +44,7 @@ block content %}
         <div class="card-body">
           <h5 class="card-title"></h5>
           <p class="card-text">O total de suas despesas no mês.</p>
-          <p>3.500</p>
+          <p>{{ ExpenseServices.get_total_amount(current_user.id) }}</p>
         </div>
       </div>
     </div>
@@ -61,7 +76,8 @@ block content %}
   </div>
 
   <!-- fromulario econdido -->
-  <div class="collapse mt-3" id="earningForm">
+   <div class="row">
+  <div class="collapse mt-3 col-md-6" id="earningForm">
     <form
       class="row g-3 col"
       method="POST"
@@ -84,7 +100,7 @@ block content %}
           type="number"
           class="form-control"
           id="valor"
-          name="amont"
+          name="amount"
           step="0.01"
           min="0"
           required
@@ -113,7 +129,7 @@ block content %}
           class="form-control"
           id="validationDefault03"
           required
-          name="date_expense"
+          name="date"
         />
       </div>
 
@@ -126,8 +142,8 @@ block content %}
     </form>
   </div>
 
-  <!-- fromulario econdido -->
-  <div class="collapse mt-3" id="myForm">
+  <!-- fromulario escondido -->
+  <div class="collapse mt-3 col-md-6" id="myForm">
     <form
       class="row g-3 col"
       method="POST"
@@ -195,17 +211,47 @@ block content %}
             id="validationDefault04"
             name="category"
             required
-          >
-            <option selected disabled value="">Choose...</option>
-            <option>Comida</option>
+            >
+              <option selected disabled value="">Choose...</option>
+              <option>Comida</option>
           </select>
         </div>
       </div>
-      <div class="col-12">
-        <button class="btn btn-primary" type="submit">Adicionar despesa</button>
-      </div>
-    </form>
+        <div class="col-12">
+          <button class="btn btn-primary" type="submit">Adicionar despesa</button>
+        </div>   
+      </form>
+    </div>
   </div>
+</div>
+
+<br>
+
+<div class="">
+<table class="table table-striped table-hover">
+  <thead>
+    <tr>
+      <th scope="col">#</th>
+      <th scope="col">Descrição</th>
+      <th scope="col">Valor</th>
+      <th scope="col">Data</th>
+      <th scope="col">Categoria</th>
+      <th scope="col">Tipo</th>
+    </tr>
+  </thead>
+  {% for expense in last_expenses %}
+  <tbody>
+    <tr>
+      <th scope="row">{{ loop.index }}</th>
+        <td>{{ expense.description }}</td>
+        <td>{{ "{:.2f}".format(expense.amount).replace('.', ',') }}</td>
+        <td>{{ expense.expense_date.strftime('%d/%m/%Y') }}</td>
+        <td>{{ expense.category }}</td>
+        <td>{{ expense.expense_type }}</td>
+    </tr>
+  </tbody>
+  {% endfor %}
+</table>
 </div>
 
 {% endblock %}

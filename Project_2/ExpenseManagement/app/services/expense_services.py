@@ -1,7 +1,7 @@
 from app.db import db
 from app.models.expenses import Expense
 
-class ExpenseService:
+class ExpenseServices:
 
     @staticmethod
     def add_new_expense(description, amont, expense_date, category, expense_type, user_id):
@@ -33,8 +33,18 @@ class ExpenseService:
     
     @staticmethod
     def get_total_amount(user_id):
-        expenses = ExpenseService.get_expenses(user_id)
+        expenses = ExpenseServices.get_expenses(user_id)
         total_amount = sum(expense.amount for expense in expenses)
-
+        total_amount = "{:.2f}".format(total_amount).replace('.', ',')
         return total_amount
-
+    
+    
+    
+    @staticmethod
+    def get_last_expenses(user_id,limit=2):
+        return (
+            Expense.query.filter_by(user_id=user_id)
+            .order_by(Expense.expense_date.desc())
+            .limit(limit)
+            .all()
+        )

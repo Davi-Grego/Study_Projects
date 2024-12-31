@@ -7,6 +7,8 @@ from app.config import Config
 from .routes import init_app
 from .db import db
 from .models import User
+from app.services import inject_services
+
 
 
 
@@ -29,7 +31,9 @@ def create_app():
     def load_user(id):
         print(User.query.get(int(id)))
         return User.query.get(int(id))
-
+    
+    app.context_processor(inject_services)
+    
     app.config.from_object(Config)
     db.init_app(app)
     migrate.init_app(app, db)
