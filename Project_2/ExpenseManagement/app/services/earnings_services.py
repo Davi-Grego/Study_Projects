@@ -2,14 +2,14 @@ from app.models.earnings import Earnings
 from app.db import db
 
 class EarningsServices:
-
     @staticmethod
-    def add_new_earnings(description, amount, date, source,user_id):
+    def add_new_earnings(description, amount, date, type, source,user_id):
         try:
             earning = Earnings(
                 description = description,
                 amount = amount,
-                date = date ,
+                date = date,
+                type = type,
                 source = source,
                 user_id = user_id,
             )

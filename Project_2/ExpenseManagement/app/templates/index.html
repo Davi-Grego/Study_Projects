@@ -15,14 +15,14 @@ block content %}
 
 {% if current_user.is_authenticated %}
 <div class="container text-center">
-  <h3 class="h3">Suas Ultimas Despesas</h3>
+  <h3 class="h3">Sua Atividade</h3>
 
   <div class="row">
     {% for expense in last_expenses %}
     <div class="col-sm-6 mb-3 mb-sm-0">
       <div class="card">
         <div class="card-body">
-          <h5 class="card-title">{{ expense.description }} - {{expense.expense_date.strftime('%d/%m/%Y') }}</h5>
+          <h5 class="card-title">{{ expense.description }} - {{expense.date.strftime('%d/%m/%Y') }}</h5>
           <p class="card-text">
             Valor R$:{{ "{:.2f}".format(expense.amount).replace('.', ',') }} <br>
             

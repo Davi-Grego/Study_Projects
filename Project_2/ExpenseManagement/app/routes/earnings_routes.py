@@ -13,11 +13,12 @@ def AddEarning():
     description =  request.form.get('description')
     amount = request.form.get('amount')
     source = request.form.get('source')
+    type = request.form.get('type')
     date = request.form.get('date')
     date = datetime.strptime(date, '%Y-%m-%d')
     user_id = current_user.id
 
-    EarningsServices.add_new_earnings(description, amount, date, source,user_id)
+    EarningsServices.add_new_earnings(description, amount, date, type, source,user_id)
     return redirect('/dash')
 
 

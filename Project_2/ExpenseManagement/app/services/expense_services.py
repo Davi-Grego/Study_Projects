@@ -4,14 +4,15 @@ from app.models.expenses import Expense
 class ExpenseServices:
 
     @staticmethod
-    def add_new_expense(description, amont, expense_date, category, expense_type, user_id):
+    def add_new_expense(description, amont, date, category, type, user_id):
         try:
+            print(type)
             expense = Expense(
                 description=description,
                 amount=amont,
-                expense_date=expense_date,
+                date=date,
                 category=category,
-                expense_type=expense_type,
+                type=type,
                 user_id=user_id
             )
 
@@ -44,7 +45,7 @@ class ExpenseServices:
     def get_last_expenses(user_id,limit=2):
         return (
             Expense.query.filter_by(user_id=user_id)
-            .order_by(Expense.expense_date.desc())
+            .order_by(Expense.date.desc())
             .limit(limit)
             .all()
         )

@@ -5,253 +5,309 @@ block content %}
   <p class="lead">De uma olhada nas suas despesas e em seu saldo atual:</p>
 
   <!-- Exemplo de Cards de Status -->
-  <div class="row justify-content-center mt-4">
-    <div class="col-md-4">
-      <div
-        class="card text-white bg-success mb-3"
-        style="box-shadow: 0 0 10px rgba(0, 0, 0, 0.699)"
-      >
-        <div class="card-header">Saldo Atual</div>
-        <div class="card-body">
-          <h5 class="card-title"></h5>
-          <p class="card-text">Seu saldo atual disponível.</p>
-          <p>{{ Utils.calculate_balance(current_user.id) }}</p>
+  <div class="container mt-4">
+    <div class="card shadow-sm p-3 mb-4 bg-white rounded">
+      <div class="card-body">
+        <h6 class="text-muted">Saldo disponível:</h6>
+        <h2 class="display-6 mb-0 me-2">
+          R$ {{ Utils.calculate_balance(current_user.id) }}
+        </h2>
+        <small class="text-muted text-body-secondary text-start"
+          >Última Atualização:</small
+        >
+
+        <hr class="hr" />
+
+        <div class="row">
+          <div class="col-md-6">
+            <div
+              class="card text-white bg-success mb-3"
+              style="box-shadow: 0 0 10px rgba(0, 0, 0, 0.699)"
+            >
+              <div class="card-header">Ganhos Totais</div>
+              <div class="card-body">
+                <h5 class="card-title">
+                  R$ {{ EarningsServices.get_total_amount(current_user.id) }}
+                </h5>
+                <p class="card-text">O total dos seus ganhos no mês.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div
+              class="card text-white bg-danger mb-3"
+              style="box-shadow: 0 0 10px rgba(0, 0, 0, 0.699)"
+            >
+              <div class="card-header">Despesas Totais</div>
+              <div class="card-body">
+                <h5 class="card-title">
+                  {{ ExpenseServices.get_total_amount(current_user.id) }}
+                </h5>
+                <p class="card-text">O total de suas despesas no mês.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-around mt-3">
+          <div class="mt-5">
+            <button
+              href="#"
+              class="btn btn-outline-success"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#earningForm"
+              aria-expanded="false"
+              aria-controls="earningForm"
+            >
+              Adicionar Receita
+            </button>
+            <button
+              class="btn btn-outline-danger"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#myForm"
+              aria-expanded="false"
+              aria-controls="myForm"
+            >
+              Adicionar Despesa
+            </button>
+          </div>
         </div>
       </div>
     </div>
-
-    <div class="col-md-4">
-      <div
-        class="card text-white bg-success mb-3"
-        style="box-shadow: 0 0 10px rgba(0, 0, 0, 0.699)"
-      >
-        <div class="card-header">Ganhos Totais</div>
-        <div class="card-body">
-          <h5 class="card-title"></h5>
-          <p class="card-text">O total dos seus ganhos no mês.</p>
-          <p>{{ EarningsServices.get_total_amount(current_user.id) }}</p>
-        </div>
-      </div>
-    </div>
-  
-
-    <div class="col-md-4">
-      <div
-        class="card text-white bg-danger mb-3"
-        style="box-shadow: 0 0 10px rgba(0, 0, 0, 0.699)"
-      >
-        <div class="card-header">Despesas Totais</div>
-        <div class="card-body">
-          <h5 class="card-title"></h5>
-          <p class="card-text">O total de suas despesas no mês.</p>
-          <p>{{ ExpenseServices.get_total_amount(current_user.id) }}</p>
-        </div>
-      </div>
-    </div>
-  </div>
-  <!-- botao de exibicao de usuario -->
-
-  <div class="mt-5">
-    <button
-      href="#"
-      class="btn btn-outline-success"
-      type="button"
-      data-bs-toggle="collapse"
-      data-bs-target="#earningForm"
-      aria-expanded="false"
-      aria-controls="earningForm"
-    >
-      Adicionar Ganho
-    </button>
-    <button
-      class="btn btn-outline-danger"
-      type="button"
-      data-bs-toggle="collapse"
-      data-bs-target="#myForm"
-      aria-expanded="false"
-      aria-controls="myForm"
-    >
-      Adicionar Despesa
-    </button>
   </div>
 
   <!-- fromulario econdido -->
-   <div class="row">
-  <div class="collapse mt-3 col-md-6" id="earningForm">
-    <form
-      class="row g-3 col"
-      method="POST"
-      action="{{ url_for('earningRoute.AddEarning') }}"
-    >
-      <div class="col-md-6">
-        <label for="validationDefault01" class="form-label">Descrição</label>
-        <input
-          type="text"
-          class="form-control"
-          id="validationDefault01"
-          required
-          name="description"
-        />
-      </div>
-
-      <div class="col-md-6">
-        <label for="valor" class="form-label">Valor (R$)</label>
-        <input
-          type="number"
-          class="form-control"
-          id="valor"
-          name="amount"
-          step="0.01"
-          min="0"
-          required
-          placeholder="0.00"
-        />
-      </div>
-
-      <div class="col-md-6">
-        <label for="validationDefault04" class="form-label">Fonte</label>
-        <div class="input-group">
+  <div class="row">
+    <div class="collapse mt-3 col-md-6" id="earningForm">
+      <form
+        class="row g-3 col"
+        method="POST"
+        action="{{ url_for('earningRoute.AddEarning') }}"
+      >
+        <div class="col-md-6">
+          <label for="validationDefault01" class="form-label">Descrição</label>
           <input
             type="text"
             class="form-control"
             id="validationDefault01"
             required
-            name="source"
+            name="description"
           />
         </div>
-      </div>
 
-
-      <div class="col-6">
-        <label for="validationDefault03" class="form-label">Data do Ganho</label>
-        <input
-          type="date"
-          class="form-control"
-          id="validationDefault03"
-          required
-          name="date"
-        />
-      </div>
-
-
-
-      <div class="col-12">
-        <button class="btn btn-primary" type="submit">Adicionar Ganho</button>
-      </div>
-      <hr class="hr" />
-    </form>
-  </div>
-
-  <!-- fromulario escondido -->
-  <div class="collapse mt-3 col-md-6" id="myForm">
-    <form
-      class="row g-3 col"
-      method="POST"
-      action="{{ url_for('expenseRoute.AddExpense') }}"
-    >
-      <div class="col-md-4">
-        <label for="validationDefault01" class="form-label">Descrição</label>
-        <input
-          type="text"
-          class="form-control"
-          id="validationDefault01"
-          required
-          name="description"
-        />
-      </div>
-
-      <div class="col-md-4">
-        <label for="valor" class="form-label">Valor (R$)</label>
-        <input
-          type="number"
-          class="form-control"
-          id="valor"
-          name="amont"
-          step="0.01"
-          min="0"
-          required
-          placeholder="0.00"
-        />
-      </div>
-
-      <div class="col-md-4">
-        <label for="validationDefaultUsername" class="form-label">Tipo</label>
-        <div class="input-group">
-          <select
-            class="form-select"
-            id="validationDefault04"
-            name="type"
+        <div class="col-md-6">
+          <label for="valor" class="form-label">Valor (R$)</label>
+          <input
+            type="number"
+            class="form-control"
+            id="valor"
+            name="amount"
+            step="0.01"
+            min="0"
             required
-          >
-            <option selected disabled value="">Choose...</option>
-            <option>Fixo</option>
-            <option>Variavel</option>
-          </select>
+            placeholder="0.00"
+          />
         </div>
-      </div>
 
-      <div class="col-md-6">
-        <label for="validationDefault03" class="form-label"
-          >Data da Compra</label
-        >
-        <input
-          type="date"
-          class="form-control"
-          id="validationDefault03"
-          required
-          name="date_expense"
-        />
-      </div>
+        <div class="col-md-6">
+          <label for="validationDefault04" class="form-label">Fonte</label>
+          <div class="input-group">
+            <input
+              type="text"
+              class="form-control"
+              id="validationDefault01"
+              required
+              name="source"
+            />
+          </div>
+        </div>
 
-      <div class="col-md-6">
-        <label for="validationDefault04" class="form-label">Categoria</label>
-        <div class="input-group">
-          <select
-            class="form-select"
-            id="validationDefault04"
-            name="category"
-            required
+        <div class="col-md-6">
+          <label for="validationDefaultUsername" class="form-label">Tipo</label>
+          <div class="input-group">
+            <select
+              class="form-select"
+              id="validationDefault04"
+              name="type"
+              required
             >
               <option selected disabled value="">Choose...</option>
-              <option>Comida</option>
-          </select>
+              <option>Fixo</option>
+              <option>Variavel</option>
+            </select>
+          </div>
         </div>
-      </div>
+
+        <div class="col-6">
+          <label for="validationDefault03" class="form-label"
+            >Data do Ganho</label
+          >
+          <input
+            type="date"
+            class="form-control"
+            id="validationDefault03"
+            required
+            name="date"
+          />
+        </div>
+
         <div class="col-12">
-          <button class="btn btn-primary" type="submit">Adicionar despesa</button>
-        </div>   
+          <button class="btn btn-primary" type="submit">Adicionar Ganho</button>
+        </div>
+        <hr class="hr" />
+      </form>
+    </div>
+
+    <!-- fromulario escondido -->
+    <div class="collapse mt-3 col-md-6" id="myForm">
+      <form
+        class="row g-3 col"
+        method="POST"
+        action="{{ url_for('expenseRoute.AddExpense') }}"
+      >
+        <div class="col-md-4">
+          <label for="validationDefault01" class="form-label">Descrição</label>
+          <input
+            type="text"
+            class="form-control"
+            id="validationDefault01"
+            required
+            name="description"
+          />
+        </div>
+
+        <div class="col-md-4">
+          <label for="valor" class="form-label">Valor (R$)</label>
+          <input
+            type="number"
+            class="form-control"
+            id="valor"
+            name="amont"
+            step="0.01"
+            min="0"
+            required
+            placeholder="0.00"
+          />
+        </div>
+
+        <div class="col-md-4">
+          <label for="validationDefaultUsername" class="form-label">Tipo</label>
+          <div class="input-group">
+            <select
+              class="form-select"
+              id="validationDefault04"
+              name="type"
+              required
+            >
+              <option selected disabled value="">Choose...</option>
+              <option>Fixo</option>
+              <option>Variavel</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <label for="validationDefault03" class="form-label"
+            >Data da Compra</label
+          >
+          <input
+            type="date"
+            class="form-control"
+            id="validationDefault03"
+            required
+            name="date"
+          />
+        </div>
+
+        <div class="col-md-6">
+          <label for="validationDefault04" class="form-label">Categoria</label>
+          <div class="input-group">
+            <select
+              class="form-select"
+              id="validationDefault04"
+              name="category"
+              required
+            >
+              <option selected disabled value="">Choose...</option>
+              <option>Mercado</option>
+              <option>Saúde</option>
+              <option>Restaurante</option>
+              <option>Casa</option>
+              <option>Roupas</option>
+              <option>Investmentos</option>
+              <option>Transporte</option>
+              <option>Educação</option>
+              <option>Pet</option>
+              <option>Contas</option>
+              <option>Impostos</option>
+              <option>Viagens</option>
+              <option>Entretenimento</option>
+              <option>Compras</option>
+              <option>Assinaturas</option>
+              <option>Serviços</option>
+              <option>Multas e Taxas</option>
+              <option>Outros</option>
+            </select>
+          </div>
+        </div>
+        <div class="col-12">
+          <button class="btn btn-primary" type="submit">
+            Adicionar despesa
+          </button>
+        </div>
       </form>
     </div>
   </div>
 </div>
 
-<br>
+<div class="list-group">
+  <h4 class="h4 text-center">Sua Atividade</h4>
+  {% for transaction in transactions %}
+  <a href="" class="list-group-item list-group-item-action">
+    <h5 class="d-flex justify-content-between">
+      <span>{{ transaction.description }}</span> 
+      <span class="{{ 'text-danger' if transaction.type == 'Expense' else 'text-success' }}">
+        R$ {{ "{:.2f}".format(transaction.amount).replace('.', ',') }}
+      </span>
+    </h5>
+    <p class="text-muted text-end">
+      {{ transaction.date.strftime('%d/%m/%Y') }}
+    </p>
+  </a>
+  {% endfor %}
+</div>
 
-<div class="">
-<table class="table table-striped table-hover">
-  <thead>
-    <tr>
-      <th scope="col">#</th>
-      <th scope="col">Descrição</th>
-      <th scope="col">Valor</th>
-      <th scope="col">Data</th>
-      <th scope="col">Categoria</th>
-      <th scope="col">Tipo</th>
-    </tr>
-  </thead>
-  {% for expense in last_expenses %}
-  <tbody>
-    <tr>
-      <th scope="row">{{ loop.index }}</th>
+
+
+<!-- <br />
+<div class="text-center">
+  <table class="table table-striped table-hover">
+    <thead>
+      <tr>
+        <th scope="col">#</th>
+        <th scope="col">Descrição</th>
+        <th scope="col">Valor</th>
+        <th scope="col">Data</th>
+        <th scope="col">Categoria</th>
+        <th scope="col">Tipo</th>
+      </tr>
+    </thead>
+    {% for expense in last_expenses %}
+    <tbody>
+      <tr>
+        <th scope="row">{{ loop.index }}</th>
         <td>{{ expense.description }}</td>
         <td>{{ "{:.2f}".format(expense.amount).replace('.', ',') }}</td>
         <td>{{ expense.expense_date.strftime('%d/%m/%Y') }}</td>
         <td>{{ expense.category }}</td>
         <td>{{ expense.expense_type }}</td>
-    </tr>
-  </tbody>
-  {% endfor %}
-</table>
-</div>
+      </tr>
+    </tbody>
+    {% endfor %}
+  </table>
+</div> -->
 
 {% endblock %}
