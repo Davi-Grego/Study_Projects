@@ -3,7 +3,8 @@ from app.models.expenses import Expense
 
 from sqlalchemy import desc, func
 from datetime import datetime, date
-
+from flask_login import current_user
+from collections import defaultdict
 
 from .earnings_services import EarningsServices
 from .expense_services import ExpenseServices
@@ -65,3 +66,37 @@ class Utils:
             "earnings": earnings,
             "expenses": expenses,
         }
+        
+    def get_current_date():
+        return datetime.today()
+    
+    def get_available_months():
+        expenses = Expense.query.with_entities(Expense.date).filter_by(user_id=current_user.id).all()
+        earnings = Earnings.query.with_entities(Earnings.date).filter_by(user_id=current_user.id).all()
+    
+        months = {transaction.date.strftime('%Y-%m') for transaction in expenses + earnings}
+        
+        return sorted(months, reverse=True)  # Sort from newest to oldest
+
+    def get_expenses_by_category(selected_month):
+    
+        # Buscar todas as despesas do usuário
+        expenses = Expense.query.filter(Expense.user_id == current_user.id).all()
+
+        # Filtrar despesas pelo mês selecionado
+        filtered_expenses = [e for e in expenses if e.date.strftime('%Y-%m') == selected_month]
+
+        # Agrupar os totais por categoria
+        expenses_by_category = defaultdict(float)
+        for expense in filtered_expenses:
+            expenses_by_category[expense.category] += expense.amount
+
+        # Converter para lista de dicionários ordenada por maior valor
+        expenses_list = sorted(
+            [{"category": cat, "total": total} for cat, total in expenses_by_category.items()],
+            key=lambda x: x["total"],
+            reverse=True
+        )
+
+        return expenses_list
+    

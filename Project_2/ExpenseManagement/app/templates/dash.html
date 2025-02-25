@@ -8,6 +8,9 @@ block content %}
   <div class="container mt-4">
     <div class="card shadow-sm p-3 mb-4 bg-white rounded">
       <div class="card-body">
+        <div class="d-flex justify-content-end">
+          <a class="btn btn-outline-light" style="color:gray; border:none; "href="/history"><i class="bi bi-clock-history"></i> Histórico</a>
+        </div>
         <h6 class="text-muted">Saldo disponível:</h6>
         <h2 class="display-6 mb-0 me-2">
           R$ {{ Utils.calculate_balance(current_user.id) }}
@@ -168,7 +171,7 @@ block content %}
         method="POST"
         action="{{ url_for('expenseRoute.AddExpense') }}"
       >
-        <div class="col-md-4">
+        <div class="col-md-6">
           <label for="validationDefault01" class="form-label">Descrição</label>
           <input
             type="text"
@@ -179,7 +182,7 @@ block content %}
           />
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-6">
           <label for="valor" class="form-label">Valor (R$)</label>
           <input
             type="number"
@@ -190,35 +193,6 @@ block content %}
             min="0"
             required
             placeholder="0.00"
-          />
-        </div>
-
-        <div class="col-md-4">
-          <label for="validationDefaultUsername" class="form-label">Tipo</label>
-          <div class="input-group">
-            <select
-              class="form-select"
-              id="validationDefault04"
-              name="type"
-              required
-            >
-              <option selected disabled value="">Choose...</option>
-              <option>Fixo</option>
-              <option>Variavel</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="col-md-6">
-          <label for="validationDefault03" class="form-label"
-            >Data da Compra</label
-          >
-          <input
-            type="date"
-            class="form-control"
-            id="validationDefault03"
-            required
-            name="date"
           />
         </div>
 
@@ -253,6 +227,36 @@ block content %}
             </select>
           </div>
         </div>
+
+        <div class="col-md-6">
+          <label for="validationDefaultUsername" class="form-label">Tipo</label>
+          <div class="input-group">
+            <select
+              class="form-select"
+              id="validationDefault04"
+              name="type"
+              required
+            >
+              <option selected disabled value="">Choose...</option>
+              <option>Fixo</option>
+              <option>Variavel</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <label for="validationDefault03" class="form-label"
+            >Data da Compra</label
+          >
+          <input
+            type="date"
+            class="form-control"
+            id="validationDefault03"
+            required
+            name="date"
+          />
+        </div>
+
         <div class="col-12">
           <button class="btn btn-primary" type="submit">
             Adicionar despesa
@@ -264,7 +268,8 @@ block content %}
 </div>
 
 <div class="list-group">
-  <h4 class="h4 text-center">Sua Atividade</h4>
+  <h4 class="h4 text-center">Sua atividade recente 
+  </h4>
   {% for transaction in transactions %}
   <a href="" class="list-group-item list-group-item-action">
     <h5 class="d-flex justify-content-between">
@@ -280,34 +285,5 @@ block content %}
   {% endfor %}
 </div>
 
-
-
-<!-- <br />
-<div class="text-center">
-  <table class="table table-striped table-hover">
-    <thead>
-      <tr>
-        <th scope="col">#</th>
-        <th scope="col">Descrição</th>
-        <th scope="col">Valor</th>
-        <th scope="col">Data</th>
-        <th scope="col">Categoria</th>
-        <th scope="col">Tipo</th>
-      </tr>
-    </thead>
-    {% for expense in last_expenses %}
-    <tbody>
-      <tr>
-        <th scope="row">{{ loop.index }}</th>
-        <td>{{ expense.description }}</td>
-        <td>{{ "{:.2f}".format(expense.amount).replace('.', ',') }}</td>
-        <td>{{ expense.expense_date.strftime('%d/%m/%Y') }}</td>
-        <td>{{ expense.category }}</td>
-        <td>{{ expense.expense_type }}</td>
-      </tr>
-    </tbody>
-    {% endfor %}
-  </table>
-</div> -->
 
 {% endblock %}

@@ -1,5 +1,8 @@
 from app.db import db
 from app.models.expenses import Expense
+from datetime import datetime
+from sqlalchemy import extract
+
 
 class ExpenseServices:
 
@@ -34,10 +37,13 @@ class ExpenseServices:
     
     @staticmethod
     def get_total_amount(user_id):
+        today = datetime.today()
         expenses = ExpenseServices.get_expenses(user_id)
-        total_amount = sum(expense.amount for expense in expenses)
-        total_amount = "{:.2f}".format(total_amount).replace('.', ',')
-        return total_amount
+        total_amount = sum(
+            expense.amount for expense in expenses
+            if expense.date.month == today.month and expense.date.year == today.year
+        )
+        return "{:.2f}".format(total_amount).replace('.', ',')
     
     
     
@@ -49,3 +55,19 @@ class ExpenseServices:
             .limit(limit)
             .all()
         )
+
+    @staticmethod
+    def get_user_months(user_id):
+        # Retorna um set de meses disponíveis (ex: {'2025-01', '2025-02'})
+        meses = Expense.query.with_entities(
+            extract('year', Expense.date), extract('month', Expense.date)
+        ).filter_by(user_id=user_id).distinct().all()
+        return {f"{ano}-{str(mes).zfill(2)}" for ano, mes in meses}
+
+    @staticmethod
+    def get_expenses_by_month(user_id, mes):
+        ano, mes = map(int, mes.split('-'))
+        return Expense.query.filter_by(user_id=user_id).filter(
+            extract('year', Expense.date) == ano,
+            extract('month', Expense.date) == mes
+        ).all()

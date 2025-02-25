@@ -1,0 +1,28 @@
+{% extends "base.html" %} {% block title %}<title>Historico</title>{% endblock%} {%block content %}
+<div class="text-center">
+  <h1 class="display-4">Histórico de Gastos</h1>
+  <div class="container mt-5">
+    <div class="card bg-white rounded">
+      <div class="card-body">
+        <h4 class="h4">Mes</h4>
+      </div>
+    </div>
+  </div>
+
+  <div class="container mt-4">
+    <div class="card bg-white rounded">
+      <div class="card-body">
+        
+        {% for expense in expenses %}
+        <div class="list-group-item d-flex justify-content-between">
+          <span>{{ expense.category }}</span>
+          <span>R$ {{ "{:.2f}".format(expense.total).replace('.', ',') }}</span>
+        </div>
+        {% endfor %}
+
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
