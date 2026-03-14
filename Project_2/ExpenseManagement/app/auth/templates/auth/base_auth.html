@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}FinControl{% endblock %}</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              DEFAULT: '#7F77DD',
+              dark:    '#534AB7',
+              dim:     '#3C3489',
+            },
+            surface: {
+              DEFAULT: '#1c1c1c',
+              hover:   '#242424',
+              border:  '#2e2e2e',
+            },
+            bg: '#0f0f0f',
+          },
+          fontFamily: {
+            sans: ['"DM Sans"', 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
+
+  <!-- Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
+
+  {% block extra_head %}{% endblock %}
+</head>
+
+<body class="h-full bg-bg font-sans text-gray-100 antialiased">
+
+  <!-- Flash messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="fixed top-4 right-4 z-50 flex flex-col gap-2">
+        {% for category, message in messages %}
+          <div class="flex items-center gap-3 px-4 py-3 rounded-lg text-sm border
+            {% if category == 'danger' or category == 'error' %}
+              bg-red-950 border-red-800 text-red-300
+            {% elif category == 'success' %}
+              bg-green-950 border-green-800 text-green-300
+            {% elif category == 'warning' %}
+              bg-yellow-950 border-yellow-800 text-yellow-300
+            {% else %}
+              bg-surface border-surface-border text-gray-300
+            {% endif %}
+          ">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+
+  <!-- Firebase SDK (módulo ES) -->
+  <script type="module">
+    import { initializeApp }       from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, OAuthProvider }
+                                    from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey:     "{{ config['FIREBASE_API_KEY'] }}",
+      authDomain: "{{ config['FIREBASE_AUTH_DOMAIN'] }}",
+      projectId:  "{{ config['FIREBASE_PROJECT_ID'] }}",
+    };
+
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    /* ── helpers ── */
+    function setLoading(btn, loading) {
+      btn.disabled = loading;
+      btn.querySelector('[data-label]').textContent = loading ? 'Aguarde...' : btn.dataset.label;
+      btn.classList.toggle('opacity-60', loading);
+      btn.classList.toggle('cursor-not-allowed', loading);
+    }
+
+    async function enviarToken(idToken) {
+      const res = await fetch("/auth/firebase-callback", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ idToken }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        window.location.href = data.new_user ? "/onboarding" : "/dashboard";
+      } else {
+        throw new Error("Falha ao autenticar no servidor.");
+      }
+    }
+
+    /* ── Google ── */
+    window.loginGoogle = async () => {
+      const btn = document.getElementById('btn-google');
+      setLoading(btn, true);
+      try {
+        const provider = new GoogleAuthProvider();
+        const result   = await signInWithPopup(auth, provider);
+        const idToken  = await result.user.getIdToken();
+        await enviarToken(idToken);
+      } catch (err) {
+        console.error(err);
+        window.showError(err.code === 'auth/popup-closed-by-user'
+          ? 'Login cancelado.'
+          : 'Erro ao entrar com Google. Tente novamente.');
+        setLoading(btn, false);
+      }
+    };
+
+    /* ── Microsoft ── */
+    window.loginMicrosoft = async () => {
+      const btn = document.getElementById('btn-microsoft');
+      setLoading(btn, true);
+      try {
+        const provider = new OAuthProvider('microsoft.com');
+        const result   = await signInWithPopup(auth, provider);
+        const idToken  = await result.user.getIdToken();
+        await enviarToken(idToken);
+      } catch (err) {
+        console.error(err);
+        window.showError(err.code === 'auth/popup-closed-by-user'
+          ? 'Login cancelado.'
+          : 'Erro ao entrar com Microsoft. Tente novamente.');
+        setLoading(btn, false);
+      }
+    };
+
+    /* ── erro inline ── */
+    window.showError = (msg) => {
+      const el = document.getElementById('auth-error');
+      if (!el) return;
+      el.textContent = msg;
+      el.classList.remove('hidden');
+      setTimeout(() => el.classList.add('hidden'), 4000);
+    };
+
+    setTimeout(() => {
+    document.querySelectorAll('[data-flash]').forEach(el => {
+        el.style.opacity = '0';
+        el.style.transition = 'opacity 0.3s';
+        setTimeout(() => el.remove(), 300);
+    });
+    }, 3000);
+  </script>
+
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

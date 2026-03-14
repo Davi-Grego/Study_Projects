@@ -1,6 +1,8 @@
-__pycache__
-venv
-.pyc
-
-
-
+.env
+__pycache__/
+venv/
+firebase-key.json
+*.pyc
+instance/
+app.db
+serviceAccountKey.json

@@ -1,1 +1,13 @@
-{}
+<html>
+    <head>
+        <title>My App</title>
+    </head>
+    <body>
+        <header>
+            <h1>Hello {{ user_name }}</h1>
+        </header>
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+    </body>
+</html>
