@@ -98,7 +98,7 @@
       });
       if (res.ok) {
         const data = await res.json();
-        window.location.href = data.new_user ? "/onboarding" : "/dashboard";
+        window.location.href = data.new_user ? "/onboarding" : "/";
       } else {
         throw new Error("Falha ao autenticar no servidor.");
       }
