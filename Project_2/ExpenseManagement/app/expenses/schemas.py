@@ -45,6 +45,22 @@ class ExpenseSchema(Schema):
         )
     )
     recurrence_end_date = fields.Date(load_default=None)
+    
+    transaction_nature = fields.Str(
+        load_default='variable',
+        validate=validate.OneOf(
+            ['fixed', 'variable'],
+            error="transaction_nature deve ser 'fixed' ou 'variable'."
+        )
+    )
+    
+    status = fields.Str(
+        load_default='paid',
+        validate=validate.OneOf(
+            ['paid', 'pending', 'cancelled'],
+            error="Status deve ser 'paid', 'pending' ou 'cancelled'."
+        )
+    )
 
     @validates_schema
     def validate_payment_rules(self, data, **kwargs):
@@ -75,10 +91,14 @@ class ExpenseSchema(Schema):
 
 
 class ExpenseUpdateSchema(Schema):
-    """Schema para edição — todos os campos são opcionais."""
     description         = fields.Str(validate=validate.Length(min=1, max=200))
     amount              = fields.Float(validate=validate.Range(min=0.01))
     date                = fields.Date()
     type                = fields.Str(validate=validate.OneOf(['income', 'expense']))
     category_id         = fields.Int(load_default=None)
+    transaction_nature  = fields.Str(validate=validate.OneOf(['fixed', 'variable']))
+    status              = fields.Str(validate=validate.OneOf(['paid', 'pending', 'cancelled']))
+    payment_type        = fields.Str(validate=validate.OneOf(['single', 'installment', 'recurring']))
+    total_installments  = fields.Int(validate=validate.Range(min=1))
+    recurrence_type     = fields.Str(validate=validate.OneOf(['weekly', 'monthly', 'yearly']), load_default=None)
     recurrence_end_date = fields.Date(load_default=None)

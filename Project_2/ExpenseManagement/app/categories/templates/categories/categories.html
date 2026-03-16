@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+{% block title %}Categorias — FinControl{% endblock %}
+
+{% block content %}
+<div class="p-4 lg:p-6 max-w-3xl mx-auto">
+
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-lg font-medium text-gray-100">Categorias</h1>
+      <p class="text-xs text-gray-600 mt-0.5">Gerencie suas categorias personalizadas</p>
+    </div>
+    <button onclick="openModal()"
+            class="flex items-center gap-2 px-4 py-2 bg-brand hover:bg-brand-dark
+                   text-white text-sm rounded-lg transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+      Nova categoria
+    </button>
+  </div>
+
+  {# ── Lista ── #}
+  <div id="categories-list" class="flex flex-col gap-2">
+    <p class="text-gray-600 text-sm text-center py-10">Carregando...</p>
+  </div>
+
+</div>
+
+{# ── Botão flutuante mobile ── #}
+<button onclick="openModal()"
+        class="fixed bottom-24 right-5 z-10 w-12 h-12 bg-brand hover:bg-brand-dark
+               rounded-full flex items-center justify-center lg:hidden transition-colors">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+       stroke="white" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+</button>
+
+{# ══════════ MODAL — Criar / Editar ══════════ #}
+<div id="modal-overlay"
+     class="fixed inset-0 z-40 bg-black/70 hidden items-center justify-center p-4"
+     onclick="if(event.target===this) closeModal()">
+  <div class="bg-[#141414] border border-surface-border rounded-xl w-full max-w-sm">
+
+    <div class="flex items-center justify-between px-5 py-4 border-b border-surface-border">
+      <h2 id="modal-title" class="text-[15px] font-medium text-gray-100">Nova categoria</h2>
+      <button onclick="closeModal()" class="text-gray-600 hover:text-gray-300 transition-colors">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="px-5 py-4 flex flex-col gap-4">
+      <input type="hidden" id="category-id" />
+
+      <div>
+        <label class="block text-xs text-gray-500 mb-1.5">Nome</label>
+        <input id="c-name" type="text" placeholder="Ex: Academia, Pets..."
+               class="w-full bg-[#1a1a1a] border border-surface-border text-gray-200 text-sm
+                      rounded-lg px-3 py-2.5 focus:outline-none focus:border-gray-500" />
+      </div>
+
+      <div>
+        <label class="block text-xs text-gray-500 mb-1.5">Ícone <span class="text-gray-600">(nome do ícone)</span></label>
+        <input id="c-icon" type="text" placeholder="Ex: home, car, heart..."
+               class="w-full bg-[#1a1a1a] border border-surface-border text-gray-200 text-sm
+                      rounded-lg px-3 py-2.5 focus:outline-none focus:border-gray-500" />
+        <p class="text-[11px] text-gray-600 mt-1">Opcional. Use nomes do Lucide Icons.</p>
+      </div>
+
+      <p id="modal-error"
+         class="hidden text-xs text-red-400 bg-red-950 border border-red-800 rounded-lg px-3 py-2">
+      </p>
+
+      <div class="flex gap-3 pt-1">
+        <button onclick="closeModal()"
+                class="flex-1 py-2.5 bg-surface border border-surface-border text-gray-400
+                       text-sm rounded-lg hover:bg-surface-hover transition-colors">
+          Cancelar
+        </button>
+        <button id="btn-submit" onclick="submitCategory()"
+                class="flex-1 py-2.5 bg-brand hover:bg-brand-dark text-white text-sm
+                       rounded-lg transition-colors disabled:opacity-50">
+          Salvar
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{# ══════════ MODAL — Confirmar exclusão ══════════ #}
+<div id="delete-overlay"
+     class="fixed inset-0 z-50 bg-black/70 hidden items-center justify-center p-4">
+  <div class="bg-[#141414] border border-surface-border rounded-xl w-full max-w-sm p-5">
+    <h3 class="text-[15px] font-medium text-gray-100 mb-2">Excluir categoria</h3>
+    <p class="text-sm text-gray-500 mb-1">Tem certeza? Esta ação não pode ser desfeita.</p>
+    <p class="text-xs text-[#BA7517] bg-[#2a1f0a] rounded px-3 py-2 mb-5">
+      Movimentações vinculadas a esta categoria ficarão sem categoria.
+    </p>
+    <div class="flex gap-3">
+      <button onclick="closeDeleteModal()"
+              class="flex-1 py-2.5 bg-surface border border-surface-border text-gray-400
+                     text-sm rounded-lg hover:bg-surface-hover transition-colors">
+        Cancelar
+      </button>
+      <button onclick="confirmDelete()"
+              class="flex-1 py-2.5 bg-red-900 hover:bg-red-800 text-red-200 text-sm
+                     rounded-lg transition-colors">
+        Excluir
+      </button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+
+{% block extra_scripts %}
+<script>
+let deleteTarget = null;
+
+// ── carregar ──────────────────────────────────────────────────────────────────
+async function loadCategories() {
+  const res = await fetch('/categories/api');
+  if (!res.ok) return;
+  const all = await res.json();
+
+  // mostra só as do usuário na página de gerenciamento
+  const userCats = all.filter(c => !c.is_global);
+  const globals  = all.filter(c =>  c.is_global);
+
+  renderList(userCats, globals);
+}
+
+function renderList(userCats, globals) {
+  const container = document.getElementById('categories-list');
+
+  let html = '';
+
+  // categorias do usuário
+  if (userCats.length) {
+    html += userCats.map(c => renderCard(c, true)).join('');
+  } else {
+    html += `
+      <div class="flex flex-col items-center py-12 gap-3
+                  bg-surface border border-surface-border rounded-xl">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none"
+             stroke="#444" stroke-width="1">
+          <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
+          <circle cx="7" cy="7" r="1.5" fill="#444"/>
+        </svg>
+        <p class="text-gray-600 text-sm">Nenhuma categoria personalizada ainda.</p>
+        <button onclick="openModal()"
+                class="text-brand text-sm hover:underline">
+          Criar primeira categoria
+        </button>
+      </div>`;
+  }
+
+  // categorias globais — somente leitura
+  if (globals.length) {
+    html += `
+      <div class="mt-6 mb-2">
+        <p class="text-[11px] text-gray-600 uppercase tracking-widest px-1">
+          Categorias padrão do sistema
+        </p>
+      </div>`;
+    html += `
+      <div class="bg-surface border border-surface-border rounded-xl overflow-hidden">
+        ${globals.map(c => `
+          <div class="flex items-center gap-3 px-4 py-3 border-b border-[#1e1e1e] last:border-0">
+            <div class="w-8 h-8 rounded-lg bg-[#1a1a2e] flex items-center justify-content-center
+                        flex items-center justify-center shrink-0">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                   stroke="#7F77DD" stroke-width="1.5">
+                <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
+                <circle cx="7" cy="7" r="1.5" fill="#7F77DD"/>
+              </svg>
+            </div>
+            <span class="text-[13px] text-gray-400">${c.name}</span>
+            <span class="ml-auto text-[10px] text-gray-600 bg-[#1e1e1e]
+                         px-2 py-0.5 rounded">padrão</span>
+          </div>`
+        ).join('')}
+      </div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+function renderCard(c, editable) {
+  return `
+    <div class="flex items-center gap-3 px-4 py-3
+                bg-surface border border-surface-border rounded-xl
+                hover:border-gray-600 transition-colors">
+      <div class="w-8 h-8 rounded-lg bg-[#1a1a2e] flex items-center justify-center shrink-0">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+             stroke="#7F77DD" stroke-width="1.5">
+          <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
+          <circle cx="7" cy="7" r="1.5" fill="#7F77DD"/>
+        </svg>
+      </div>
+
+      <div class="flex-1 min-w-0">
+        <p class="text-[13px] text-gray-200">${c.name}</p>
+        ${c.icon ? `<p class="text-[11px] text-gray-600">${c.icon}</p>` : ''}
+      </div>
+
+      ${editable ? `
+        <div class="flex items-center gap-2 shrink-0">
+          <button onclick='openEditModal(${JSON.stringify(c).replace(/'/g,"&#39;")})'
+                  class="p-1.5 text-gray-600 hover:text-gray-300 transition-colors">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="1.5">
+              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+          </button>
+          <button onclick="openDeleteModal(${c.id})"
+                  class="p-1.5 text-gray-600 hover:text-red-400 transition-colors">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="1.5">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6l-1 14H6L5 6"/>
+              <path d="M10 11v6M14 11v6M9 6V4h6v2"/>
+            </svg>
+          </button>
+        </div>` : ''}
+    </div>`;
+}
+
+// ── modal criar / editar ──────────────────────────────────────────────────────
+function openModal() {
+  document.getElementById('category-id').value  = '';
+  document.getElementById('modal-title').textContent = 'Nova categoria';
+  document.getElementById('c-name').value = '';
+  document.getElementById('c-icon').value = '';
+  document.getElementById('modal-error').classList.add('hidden');
+  document.getElementById('modal-overlay').classList.replace('hidden','flex');
+  document.getElementById('c-name').focus();
+}
+
+function openEditModal(c) {
+  document.getElementById('category-id').value       = c.id;
+  document.getElementById('modal-title').textContent = 'Editar categoria';
+  document.getElementById('c-name').value            = c.name;
+  document.getElementById('c-icon').value            = c.icon || '';
+  document.getElementById('modal-error').classList.add('hidden');
+  document.getElementById('modal-overlay').classList.replace('hidden','flex');
+  document.getElementById('c-name').focus();
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.replace('flex','hidden');
+}
+
+async function submitCategory() {
+  const id   = document.getElementById('category-id').value;
+  const body = {
+    name: document.getElementById('c-name').value.trim(),
+    icon: document.getElementById('c-icon').value.trim() || null,
+  };
+
+  if (!body.name) {
+    showError('O nome é obrigatório.');
+    return;
+  }
+
+  const btn = document.getElementById('btn-submit');
+  btn.disabled = true;
+
+  try {
+    const res  = await fetch(id ? `/categories/api/${id}` : '/categories/api', {
+      method:  id ? 'PUT' : 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body:    JSON.stringify(body),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      showError(data.errors
+        ? Object.values(data.errors).flat().join(' ')
+        : data.error || 'Erro ao salvar.');
+    } else {
+      closeModal();
+      loadCategories();
+    }
+  } catch(e) { showError('Erro de conexão.'); }
+  finally { btn.disabled = false; }
+}
+
+function showError(msg) {
+  const el = document.getElementById('modal-error');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+
+// ── exclusão ──────────────────────────────────────────────────────────────────
+function openDeleteModal(id) {
+  deleteTarget = id;
+  document.getElementById('delete-overlay').classList.replace('hidden','flex');
+}
+
+function closeDeleteModal() {
+  document.getElementById('delete-overlay').classList.replace('flex','hidden');
+  deleteTarget = null;
+}
+
+async function confirmDelete() {
+  const res = await fetch(`/categories/api/${deleteTarget}`, {method: 'DELETE'});
+  if (res.ok) { closeDeleteModal(); loadCategories(); }
+  else {
+    const data = await res.json();
+    closeDeleteModal();
+    alert(data.error || 'Erro ao excluir.');
+  }
+}
+
+// ── init ──────────────────────────────────────────────────────────────────────
+loadCategories();
+</script>
+{% endblock %}

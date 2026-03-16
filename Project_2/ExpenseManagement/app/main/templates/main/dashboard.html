@@ -1,0 +1,384 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — FinControl{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="p-4 lg:p-6 max-w-7xl mx-auto">
+
+  {# ── Cabeçalho ── #}
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-lg font-medium text-gray-100">Dashboard</h1>
+      <p class="text-xs text-gray-600 mt-0.5">Bem-vindo, {{ session.get('name', 'Usuário').split()[0] }}</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <button id="btn-prev-month"
+              class="w-7 h-7 flex items-center justify-center rounded-md
+                     bg-surface border border-surface-border
+                     text-gray-500 hover:text-gray-300 hover:border-gray-600 transition-colors">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <span id="month-label" class="text-sm text-gray-400 min-w-[90px] text-center"></span>
+      <button id="btn-next-month"
+              class="w-7 h-7 flex items-center justify-center rounded-md
+                     bg-surface border border-surface-border
+                     text-gray-500 hover:text-gray-300 hover:border-gray-600 transition-colors">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+    </div>
+  </div>
+
+  {# ── Cards de saldo — linha 1 ── #}
+  <div class="grid grid-cols-3 gap-3 mb-3">
+    <div class="bg-surface border border-surface-border rounded-xl p-4">
+      <p class="text-[11px] text-gray-600 mb-1.5">Entradas <span class="text-gray-700">(pagas)</span></p>
+      <p id="card-income" class="text-xl font-medium text-[#1D9E75]">—</p>
+    </div>
+    <div class="bg-surface border border-surface-border rounded-xl p-4">
+      <p class="text-[11px] text-gray-600 mb-1.5">Saídas <span class="text-gray-700">(pagas)</span></p>
+      <p id="card-outcome" class="text-xl font-medium text-[#E24B4A]">—</p>
+    </div>
+    <div class="bg-surface border border-surface-border rounded-xl p-4">
+      <p class="text-[11px] text-gray-600 mb-1.5">Saldo real</p>
+      <p id="card-balance" class="text-xl font-medium text-gray-100">—</p>
+    </div>
+  </div>
+
+  {# ── Cards de saldo — linha 2 ── #}
+  <div class="grid grid-cols-2 gap-3 mb-5">
+    <div class="bg-surface border border-surface-border rounded-xl p-4">
+      <p class="text-[11px] text-gray-600 mb-1.5">
+        Saldo estimado <span class="text-gray-700">(+ pendentes)</span>
+      </p>
+      <p id="card-estimated" class="text-xl font-medium text-gray-100">—</p>
+    </div>
+    <div class="bg-surface border border-surface-border rounded-xl p-4">
+      <p class="text-[11px] text-gray-600 mb-1.5">Acumulado de meses anteriores</p>
+      <p id="card-accumulated" class="text-xl font-medium text-gray-100">—</p>
+    </div>
+  </div>
+
+  {# ── Grid inferior ── #}
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+    {# Gráfico de gastos #}
+    <div class="bg-surface border border-surface-border rounded-xl p-4">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-[13px] font-medium text-gray-300">Gastos do mês</h2>
+        <a href="{{ url_for('reports.index') }}"
+           class="text-[11px] text-brand hover:text-brand-dark transition-colors">
+          ver relatório
+        </a>
+      </div>
+      <div class="relative h-44">
+        <canvas id="chart-monthly"></canvas>
+      </div>
+      <div class="flex gap-4 mt-3">
+        <div class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-sm bg-[#1D9E75]"></span>
+          <span class="text-[11px] text-gray-600">Entradas</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-sm bg-brand"></span>
+          <span class="text-[11px] text-gray-600">Saídas</span>
+        </div>
+      </div>
+    </div>
+
+    {# Últimas movimentações #}
+    <div class="bg-surface border border-surface-border rounded-xl p-4">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-[13px] font-medium text-gray-300">Últimas movimentações</h2>
+        <a href="{{ url_for('expenses.index') }}"
+           class="text-[11px] text-brand hover:text-brand-dark transition-colors">
+          ver todas
+        </a>
+      </div>
+      <div id="recent-transactions" class="flex flex-col divide-y divide-[#222]">
+        <p class="text-[13px] text-gray-600 py-4 text-center">Carregando...</p>
+      </div>
+    </div>
+
+    {# Metas #}
+    <div class="bg-surface border border-surface-border rounded-xl p-4">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-[13px] font-medium text-gray-300">Metas</h2>
+        <a href="{{ url_for('goals.index') }}"
+           class="text-[11px] text-brand hover:text-brand-dark transition-colors">
+          ver todas
+        </a>
+      </div>
+      <div id="goals-list" class="flex flex-col gap-4">
+        <p class="text-[13px] text-gray-600 py-4 text-center">Carregando...</p>
+      </div>
+    </div>
+
+    {# Alertas #}
+    <div class="bg-surface border border-surface-border rounded-xl p-4">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-[13px] font-medium text-gray-300">Alertas</h2>
+        <span id="alert-badge"
+              class="hidden text-[11px] bg-[#2a1f0a] text-[#BA7517] px-2 py-0.5 rounded">
+          0 novos
+        </span>
+      </div>
+      <div id="alerts-list" class="flex flex-col divide-y divide-[#222]">
+        <p class="text-[13px] text-gray-600 py-4 text-center">Nenhum alerta.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+
+{% block extra_scripts %}
+<script>
+const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+const fmt = v => new Intl.NumberFormat('pt-BR', { style:'currency', currency:'BRL' }).format(v);
+
+let currentYear   = {{ current_year }};
+let currentMonth  = {{ current_month }};
+let chartInstance = null;
+
+// ── navegação de mês ──────────────────────────────────────────────────────────
+function updateMonthLabel() {
+  document.getElementById('month-label').textContent =
+    `${MONTHS[currentMonth - 1]} ${currentYear}`;
+}
+
+document.getElementById('btn-prev-month').addEventListener('click', () => {
+  currentMonth--;
+  if (currentMonth < 1) { currentMonth = 12; currentYear--; }
+  loadDashboard();
+});
+
+document.getElementById('btn-next-month').addEventListener('click', () => {
+  currentMonth++;
+  if (currentMonth > 12) { currentMonth = 1; currentYear++; }
+  loadDashboard();
+});
+
+// ── carrega todos os dados do mês ─────────────────────────────────────────────
+async function loadDashboard() {
+  updateMonthLabel();
+  await Promise.all([
+    loadTransactions(),
+    loadGoals(),
+  ]);
+}
+
+// ── movimentações + saldo + gráfico ──────────────────────────────────────────
+async function loadTransactions() {
+  try {
+    const [expRes, balRes] = await Promise.all([
+      fetch(`/expenses/api/filter?year=${currentYear}&month=${currentMonth}`),
+      fetch(`/expenses/api/balance?year=${currentYear}&month=${currentMonth}`),
+    ]);
+
+    if (!expRes.ok || !balRes.ok) return;
+
+    const expenses = await expRes.json();
+    const bal      = await balRes.json();
+
+    // cards linha 1
+    document.getElementById('card-income').textContent  = fmt(bal.real.income);
+    document.getElementById('card-outcome').textContent = fmt(bal.real.outcome);
+
+    const balEl = document.getElementById('card-balance');
+    balEl.textContent = fmt(bal.real.balance);
+    balEl.className   = `text-xl font-medium ${bal.real.balance >= 0 ? 'text-[#1D9E75]' : 'text-[#E24B4A]'}`;
+
+    // cards linha 2
+    const estEl = document.getElementById('card-estimated');
+    estEl.textContent = fmt(bal.estimated.balance);
+    estEl.className   = `text-xl font-medium ${bal.estimated.balance >= 0 ? 'text-[#1D9E75]' : 'text-[#E24B4A]'}`;
+
+    const accEl = document.getElementById('card-accumulated');
+    accEl.textContent = fmt(bal.accumulated);
+    accEl.className   = `text-xl font-medium ${bal.accumulated >= 0 ? 'text-[#1D9E75]' : 'text-[#E24B4A]'}`;
+
+    renderTransactions(expenses.slice(0, 5));
+    renderChart(expenses);
+
+  } catch(e) { console.error('loadTransactions', e); }
+}
+
+// ── lista de transações recentes ──────────────────────────────────────────────
+function renderTransactions(expenses) {
+  const container = document.getElementById('recent-transactions');
+
+  if (!expenses.length) {
+    container.innerHTML = '<p class="text-[13px] text-gray-600 py-4 text-center">Sem movimentações no período.</p>';
+    return;
+  }
+
+  const statusLabel = { paid: null, pending: 'pendente', cancelled: 'cancelado' };
+  const statusColor = { pending: 'text-[#BA7517]', cancelled: 'text-gray-600' };
+
+  container.innerHTML = expenses.map(e => {
+    const isIncome = e.type === 'income';
+    const badge    = statusLabel[e.status]
+      ? `<span class="text-[10px] ${statusColor[e.status]} ml-1">(${statusLabel[e.status]})</span>`
+      : '';
+
+    return `
+      <div class="flex items-center gap-3 py-2.5">
+        <div class="w-8 h-8 rounded-lg bg-[#1a1a2e] flex items-center justify-center shrink-0">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+               stroke="${isIncome ? '#1D9E75' : '#7F77DD'}" stroke-width="1.5">
+            ${isIncome
+              ? '<path d="M12 19V5M5 12l7-7 7 7"/>'
+              : '<path d="M12 5v14M5 12l7 7 7-7"/>'}
+          </svg>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-[13px] text-gray-300 truncate">${e.description}${badge}</p>
+          <p class="text-[11px] text-gray-600">
+            ${new Date(e.date + 'T00:00:00').toLocaleDateString('pt-BR')}
+          </p>
+        </div>
+        <span class="text-[13px] font-medium shrink-0
+                     ${e.status === 'cancelled'
+                        ? 'line-through text-gray-600'
+                        : isIncome ? 'text-[#1D9E75]' : 'text-[#E24B4A]'}">
+          ${isIncome ? '+' : '-'} ${fmt(e.amount)}
+        </span>
+      </div>`;
+  }).join('');
+}
+
+// ── gráfico de barras por semana ──────────────────────────────────────────────
+function renderChart(expenses) {
+  // exclui cancelados do gráfico
+  const active = expenses.filter(e => e.status !== 'cancelled');
+  const weeks  = {1:{i:0,o:0},2:{i:0,o:0},3:{i:0,o:0},4:{i:0,o:0}};
+
+  active.forEach(e => {
+    const day  = new Date(e.date + 'T00:00:00').getDate();
+    const week = Math.min(Math.ceil(day / 7), 4);
+    if (e.type === 'income') weeks[week].i += e.amount;
+    else                     weeks[week].o += e.amount;
+  });
+
+  const labels  = ['Sem 1','Sem 2','Sem 3','Sem 4'];
+  const income  = [1,2,3,4].map(w => Math.round(weeks[w].i * 100) / 100);
+  const outcome = [1,2,3,4].map(w => Math.round(weeks[w].o * 100) / 100);
+
+  const ctx = document.getElementById('chart-monthly').getContext('2d');
+  if (chartInstance) chartInstance.destroy();
+
+  chartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label:'Entradas', data:income,  backgroundColor:'#1D9E75', borderRadius:4, barPercentage:0.6 },
+        { label:'Saídas',   data:outcome, backgroundColor:'#7F77DD', borderRadius:4, barPercentage:0.6 },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => fmt(ctx.parsed.y) } },
+      },
+      scales: {
+        x: { grid:{ color:'#1f1f1f' }, ticks:{ color:'#555', font:{ size:11 } } },
+        y: { grid:{ color:'#1f1f1f' }, ticks:{
+          color:'#555', font:{ size:11 },
+          callback: v => 'R$ ' + (v >= 1000 ? (v/1000).toFixed(1)+'k' : v),
+        }},
+      },
+    },
+  });
+}
+
+// ── metas ─────────────────────────────────────────────────────────────────────
+async function loadGoals() {
+  try {
+    const res   = await fetch('/goals/api');
+    if (!res.ok) return;
+    const goals = await res.json();
+
+    const container = document.getElementById('goals-list');
+    const active    = goals.filter(g => g.is_active).slice(0, 4);
+
+    if (!active.length) {
+      container.innerHTML = '<p class="text-[13px] text-gray-600 py-4 text-center">Nenhuma meta ativa.</p>';
+      renderAlerts([]);
+      return;
+    }
+
+    container.innerHTML = active.map(g => `
+      <div>
+        <div class="flex justify-between mb-1.5">
+          <span class="text-[13px] text-gray-300 truncate mr-2">${g.name}</span>
+          <span class="text-[11px] text-brand shrink-0">${g.progress_pct}%</span>
+        </div>
+        <div class="h-1.5 bg-[#222] rounded-full overflow-hidden">
+          <div class="h-full bg-brand rounded-full transition-all duration-500"
+               style="width:${Math.min(g.progress_pct, 100)}%"></div>
+        </div>
+        <div class="flex justify-between mt-1">
+          <span class="text-[10px] text-gray-600">${fmt(g.current_amount)}</span>
+          <span class="text-[10px] text-gray-600">Meta: ${fmt(g.target_amount)}</span>
+        </div>
+      </div>`
+    ).join('');
+
+    renderAlerts(goals);
+
+  } catch(e) { console.error('loadGoals', e); }
+}
+
+// ── alertas ───────────────────────────────────────────────────────────────────
+function renderAlerts(goals) {
+  const alerts = [];
+
+  goals.filter(g => g.is_active).forEach(g => {
+    if (g.spending_limit && g.spending_limit > 0) {
+      alerts.push({
+        type: 'danger',
+        msg:  `Limite de gasto de ${fmt(g.spending_limit)} atingido na meta "${g.name}".`,
+      });
+    }
+    if (g.progress_pct >= 90 && g.progress_pct < 100) {
+      alerts.push({
+        type: 'warn',
+        msg:  `Meta "${g.name}" está a ${(100 - g.progress_pct).toFixed(0)}% de ser concluída!`,
+      });
+    }
+  });
+
+  const badge     = document.getElementById('alert-badge');
+  const container = document.getElementById('alerts-list');
+
+  if (!alerts.length) {
+    container.innerHTML = '<p class="text-[13px] text-gray-600 py-4 text-center">Nenhum alerta.</p>';
+    badge.classList.add('hidden');
+    return;
+  }
+
+  badge.textContent = `${alerts.length} novo${alerts.length > 1 ? 's' : ''}`;
+  badge.classList.remove('hidden');
+
+  container.innerHTML = alerts.map(a => `
+    <div class="flex gap-3 py-2.5">
+      <span class="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0
+                   ${a.type === 'danger' ? 'bg-[#E24B4A]' : 'bg-[#BA7517]'}"></span>
+      <p class="text-[12px] text-gray-500 leading-relaxed">${a.msg}</p>
+    </div>`
+  ).join('');
+}
+
+// ── init ──────────────────────────────────────────────────────────────────────
+loadDashboard();
+</script>
+{% endblock %}

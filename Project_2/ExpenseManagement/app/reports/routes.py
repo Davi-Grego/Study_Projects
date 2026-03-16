@@ -4,7 +4,7 @@ from datetime import date
 from app.firebase import login_required, api_login_required
 from app.reports.services import ReportService
 
-reports_bp = Blueprint('reports', __name__, url_prefix='/reports')
+reports_bp = Blueprint('reports', __name__, url_prefix='/reports', template_folder='templates/reports')
 
 
 # ── Páginas (SSR) ─────────────────────────────────────────────────────────────
@@ -21,7 +21,7 @@ def index(user_id: int):
     summary = ReportService.monthly_summary(user_id, today.year, today.month)
 
     return render_template(
-        'reports/index.html',
+        'reports.html',
         summary=summary,
         current_year=today.year,
         current_month=today.month,

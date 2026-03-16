@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+{% block title %}Metas — FinControl{% endblock %}
+
+{% block content %}
+<div class="p-4 lg:p-6 max-w-7xl mx-auto">
+
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-lg font-medium text-gray-100">Metas</h1>
+    <button onclick="openCreateModal()"
+            class="flex items-center gap-2 px-4 py-2 bg-brand hover:bg-brand-dark
+                   text-white text-sm rounded-lg transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+      Nova meta
+    </button>
+  </div>
+
+  {# Grid de cards #}
+  <div id="goals-grid"
+       class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <p class="text-gray-600 text-sm col-span-full text-center py-10">Carregando...</p>
+  </div>
+
+</div>
+
+{# ── Botão flutuante mobile ── #}
+<button onclick="openCreateModal()"
+        class="fixed bottom-24 right-5 z-10 w-12 h-12 bg-brand hover:bg-brand-dark
+               rounded-full flex items-center justify-center lg:hidden transition-colors">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+       stroke="white" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+</button>
+
+{# ══════════ MODAL — Criar meta ══════════ #}
+<div id="modal-create"
+     class="fixed inset-0 z-40 bg-black/70 hidden items-center justify-center p-4"
+     onclick="if(event.target===this) closeCreateModal()">
+  <div class="bg-[#141414] border border-surface-border rounded-xl w-full max-w-md">
+
+    <div class="flex items-center justify-between px-5 py-4 border-b border-surface-border">
+      <h2 class="text-[15px] font-medium text-gray-100">Nova meta</h2>
+      <button onclick="closeCreateModal()" class="text-gray-600 hover:text-gray-300">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="px-5 py-4 flex flex-col gap-4">
+
+      <div>
+        <label class="block text-xs text-gray-500 mb-1.5">Nome da meta</label>
+        <input id="g-name" type="text" placeholder="Ex: Reserva de emergência"
+               class="w-full bg-[#1a1a1a] border border-surface-border text-gray-200 text-sm
+                      rounded-lg px-3 py-2.5 focus:outline-none focus:border-gray-500" />
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1.5">Valor alvo (R$)</label>
+          <input id="g-target" type="number" step="0.01" min="0.01" placeholder="0,00"
+                 class="w-full bg-[#1a1a1a] border border-surface-border text-gray-200 text-sm
+                        rounded-lg px-3 py-2.5 focus:outline-none focus:border-gray-500" />
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1.5">Prazo (opcional)</label>
+          <input id="g-deadline" type="date"
+                 class="w-full bg-[#1a1a1a] border border-surface-border text-gray-200 text-sm
+                        rounded-lg px-3 py-2.5 focus:outline-none focus:border-gray-500" />
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs text-gray-500 mb-1.5">Limite de gasto para alerta (opcional)</label>
+        <input id="g-limit" type="number" step="0.01" min="0.01" placeholder="Ex: 500,00"
+               class="w-full bg-[#1a1a1a] border border-surface-border text-gray-200 text-sm
+                      rounded-lg px-3 py-2.5 focus:outline-none focus:border-gray-500" />
+        <p class="text-[11px] text-gray-600 mt-1">Você receberá um alerta quando um gasto atingir este valor.</p>
+      </div>
+
+      <p id="create-error" class="hidden text-xs text-red-400 bg-red-950 border border-red-800 rounded-lg px-3 py-2"></p>
+
+      <div class="flex gap-3 pt-1">
+        <button onclick="closeCreateModal()"
+                class="flex-1 py-2.5 bg-surface border border-surface-border text-gray-400
+                       text-sm rounded-lg hover:bg-surface-hover transition-colors">
+          Cancelar
+        </button>
+        <button id="btn-create-goal" onclick="submitGoal()"
+                class="flex-1 py-2.5 bg-brand hover:bg-brand-dark text-white text-sm
+                       rounded-lg transition-colors disabled:opacity-50">
+          Criar meta
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ══════════ MODAL — Registrar progresso ══════════ #}
+<div id="modal-progress"
+     class="fixed inset-0 z-40 bg-black/70 hidden items-center justify-center p-4"
+     onclick="if(event.target===this) closeProgressModal()">
+  <div class="bg-[#141414] border border-surface-border rounded-xl w-full max-w-sm">
+
+    <div class="flex items-center justify-between px-5 py-4 border-b border-surface-border">
+      <h2 class="text-[15px] font-medium text-gray-100">Registrar progresso</h2>
+      <button onclick="closeProgressModal()" class="text-gray-600 hover:text-gray-300">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="px-5 py-4 flex flex-col gap-4">
+      <input type="hidden" id="progress-goal-id" />
+      <p id="progress-goal-name" class="text-sm text-gray-400"></p>
+
+      <div>
+        <label class="block text-xs text-gray-500 mb-1.5">Valor guardado (R$)</label>
+        <input id="progress-amount" type="number" step="0.01" min="0.01" placeholder="0,00"
+               class="w-full bg-[#1a1a1a] border border-surface-border text-gray-200 text-sm
+                      rounded-lg px-3 py-2.5 focus:outline-none focus:border-gray-500" />
+      </div>
+
+      <p id="progress-error" class="hidden text-xs text-red-400 bg-red-950 border border-red-800 rounded-lg px-3 py-2"></p>
+
+      <div class="flex gap-3">
+        <button onclick="closeProgressModal()"
+                class="flex-1 py-2.5 bg-surface border border-surface-border text-gray-400
+                       text-sm rounded-lg hover:bg-surface-hover transition-colors">
+          Cancelar
+        </button>
+        <button onclick="submitProgress()"
+                class="flex-1 py-2.5 bg-brand hover:bg-brand-dark text-white text-sm
+                       rounded-lg transition-colors">
+          Salvar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# Modal de confirmação de exclusão #}
+<div id="delete-overlay"
+     class="fixed inset-0 z-50 bg-black/70 hidden items-center justify-center p-4">
+  <div class="bg-[#141414] border border-surface-border rounded-xl w-full max-w-sm p-5">
+    <h3 class="text-[15px] font-medium text-gray-100 mb-2">Excluir meta</h3>
+    <p class="text-sm text-gray-500 mb-5">Tem certeza? Esta ação não pode ser desfeita.</p>
+    <div class="flex gap-3">
+      <button onclick="closeDeleteModal()"
+              class="flex-1 py-2.5 bg-surface border border-surface-border text-gray-400
+                     text-sm rounded-lg hover:bg-surface-hover transition-colors">
+        Cancelar
+      </button>
+      <button onclick="confirmDelete()"
+              class="flex-1 py-2.5 bg-red-900 hover:bg-red-800 text-red-200 text-sm
+                     rounded-lg transition-colors">
+        Excluir
+      </button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+
+{% block extra_scripts %}
+<script>
+const fmt = v => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v);
+let deleteTarget = null;
+
+// ── carregar metas ────────────────────────────────────────────────────────────
+async function loadGoals() {
+  const res   = await fetch('/goals/api');
+  if (!res.ok) return;
+  const goals = await res.json();
+  renderGoals(goals);
+}
+
+function renderGoals(goals) {
+  const grid = document.getElementById('goals-grid');
+
+  if (!goals.length) {
+    grid.innerHTML = `
+      <div class="col-span-full flex flex-col items-center py-16 gap-3">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#444" stroke-width="1"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        <p class="text-gray-600 text-sm">Nenhuma meta criada ainda.</p>
+        <button onclick="openCreateModal()" class="text-brand text-sm hover:underline">Criar primeira meta</button>
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = goals.map(g => {
+    const pct      = Math.min(g.progress_pct, 100);
+    const deadline = g.deadline
+      ? new Date(g.deadline+'T00:00:00').toLocaleDateString('pt-BR')
+      : null;
+    const daysLeft = g.deadline
+      ? Math.ceil((new Date(g.deadline+'T00:00:00') - new Date()) / 86400000)
+      : null;
+    const statusColor = !g.is_active ? 'text-[#1D9E75]'
+      : daysLeft !== null && daysLeft < 30 ? 'text-[#BA7517]' : 'text-gray-600';
+
+    return `
+    <div class="bg-surface border border-surface-border rounded-xl p-4 flex flex-col gap-3
+                ${!g.is_active ? 'opacity-60' : ''}">
+
+      <div class="flex items-start justify-between gap-2">
+        <div class="min-w-0">
+          <p class="text-[14px] font-medium text-gray-200 truncate">${g.name}</p>
+          ${deadline ? `<p class="text-[11px] ${statusColor} mt-0.5">
+            ${!g.is_active ? 'Concluída' : daysLeft < 0 ? 'Prazo vencido' : `Prazo: ${deadline}`}
+          </p>` : ''}
+        </div>
+        <span class="text-[13px] font-medium text-brand shrink-0">${pct.toFixed(0)}%</span>
+      </div>
+
+      <div>
+        <div class="h-1.5 bg-[#222] rounded-full overflow-hidden">
+          <div class="h-full rounded-full transition-all duration-700
+                      ${pct >= 100 ? 'bg-[#1D9E75]' : 'bg-brand'}"
+               style="width:${pct}%"></div>
+        </div>
+        <div class="flex justify-between mt-1.5">
+          <span class="text-[11px] text-gray-600">${fmt(g.current_amount)}</span>
+          <span class="text-[11px] text-gray-600">${fmt(g.target_amount)}</span>
+        </div>
+      </div>
+
+      ${g.spending_limit ? `
+        <p class="text-[11px] text-[#BA7517] bg-[#2a1f0a] rounded px-2 py-1">
+          Alerta de gasto: ${fmt(g.spending_limit)}
+        </p>` : ''}
+
+      <div class="flex gap-2 mt-auto pt-1">
+        ${g.is_active ? `
+          <button onclick="openProgressModal(${g.id}, '${g.name.replace(/'/g,"\\'")}', ${g.remaining})"
+                  class="flex-1 py-2 bg-[#1a1a2e] hover:bg-[#22223e] border border-[#2a2a3e]
+                         text-brand text-[12px] rounded-lg transition-colors">
+            + Progresso
+          </button>` : ''}
+        <button onclick="openDeleteModal(${g.id})"
+                class="p-2 text-gray-600 hover:text-red-400 transition-colors">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── modal criar ───────────────────────────────────────────────────────────────
+function openCreateModal() {
+  ['g-name','g-target','g-deadline','g-limit'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('create-error').classList.add('hidden');
+  document.getElementById('modal-create').classList.replace('hidden','flex');
+}
+function closeCreateModal() {
+  document.getElementById('modal-create').classList.replace('flex','hidden');
+}
+
+async function submitGoal() {
+  const body = {
+    name:           document.getElementById('g-name').value.trim(),
+    target_amount:  parseFloat(document.getElementById('g-target').value),
+    deadline:       document.getElementById('g-deadline').value || null,
+    spending_limit: parseFloat(document.getElementById('g-limit').value) || null,
+  };
+
+  const btn = document.getElementById('btn-create-goal');
+  btn.disabled = true;
+  try {
+    const res  = await fetch('/goals/api', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const msg = data.errors ? Object.values(data.errors).flat().join(' ') : data.error || 'Erro.';
+      document.getElementById('create-error').textContent = msg;
+      document.getElementById('create-error').classList.remove('hidden');
+    } else { closeCreateModal(); loadGoals(); }
+  } catch(e) { document.getElementById('create-error').textContent = 'Erro de conexão.'; document.getElementById('create-error').classList.remove('hidden'); }
+  finally { btn.disabled = false; }
+}
+
+// ── modal progresso ───────────────────────────────────────────────────────────
+function openProgressModal(id, name, remaining) {
+  document.getElementById('progress-goal-id').value = id;
+  document.getElementById('progress-goal-name').textContent =
+    `${name} — faltam ${fmt(remaining)}`;
+  document.getElementById('progress-amount').value = '';
+  document.getElementById('progress-error').classList.add('hidden');
+  document.getElementById('modal-progress').classList.replace('hidden','flex');
+}
+function closeProgressModal() {
+  document.getElementById('modal-progress').classList.replace('flex','hidden');
+}
+
+async function submitProgress() {
+  const id     = document.getElementById('progress-goal-id').value;
+  const amount = parseFloat(document.getElementById('progress-amount').value);
+  if (!amount || amount <= 0) {
+    document.getElementById('progress-error').textContent = 'Informe um valor válido.';
+    document.getElementById('progress-error').classList.remove('hidden');
+    return;
+  }
+  const res = await fetch(`/goals/api/${id}/progress`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({amount})
+  });
+  if (res.ok) { closeProgressModal(); loadGoals(); }
+}
+
+// ── exclusão ──────────────────────────────────────────────────────────────────
+function openDeleteModal(id) { deleteTarget=id; document.getElementById('delete-overlay').classList.replace('hidden','flex'); }
+function closeDeleteModal()  { document.getElementById('delete-overlay').classList.replace('flex','hidden'); deleteTarget=null; }
+async function confirmDelete() {
+  const res = await fetch(`/goals/api/${deleteTarget}`, {method:'DELETE'});
+  if (res.ok) { closeDeleteModal(); loadGoals(); }
+}
+
+loadGoals();
+</script>
+{% endblock %}

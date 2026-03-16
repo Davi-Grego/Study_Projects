@@ -8,7 +8,7 @@ from app.goals.services import GoalService
 
 class ExpenseService:
 
-    # ── Criação ──────────────────────────────────────────────────────────────
+    # ── Criação ───────────────────────────────────────────────────────────────
 
     @staticmethod
     def create(user_id: int, data: dict) -> list[Expense]:
@@ -24,7 +24,6 @@ class ExpenseService:
         if payment_type == 'recurring':
             return ExpenseService._create_recurring(user_id, data)
 
-        # pagamento simples
         expense = Expense(
             user_id=user_id,
             description=data['description'],
@@ -34,12 +33,13 @@ class ExpenseService:
             payment_type='single',
             installment_number=1,
             total_installments=1,
+            transaction_nature=data.get('transaction_nature', 'variable'),
+            status=data.get('status', 'paid'),
             category_id=data.get('category_id'),
         )
         saved = ExpenseRepository.save(expense)
 
-        # verifica impacto na meta — RF016
-        if saved.type == 'expense':
+        if saved.type == 'expense' and saved.status == 'paid':
             GoalService.check_goal_impact(user_id, saved.amount)
 
         return [saved]
@@ -50,38 +50,34 @@ class ExpenseService:
         Gera N registros, um por parcela, cada um com a data do mês correspondente.
         RN002 — cada parcela impacta apenas o seu mês.
         """
-        total = data['total_installments']
-        base_date: date = data['date']
+        total             = data['total_installments']
+        base_date: date   = data['date']
         installment_amount = round(data['amount'] / total, 2)
 
         expenses = []
-        parent_id = None
-
         for i in range(total):
-            installment_date = base_date + relativedelta(months=i)
             exp = Expense(
                 user_id=user_id,
                 description=f"{data['description']} ({i + 1}/{total})",
                 amount=installment_amount,
-                date=installment_date,
+                date=base_date + relativedelta(months=i),
                 type=data['type'],
                 payment_type='installment',
                 installment_number=i + 1,
                 total_installments=total,
+                transaction_nature=data.get('transaction_nature', 'variable'),
+                status=data.get('status', 'paid'),
                 category_id=data.get('category_id'),
-                parent_id=parent_id,
             )
             expenses.append(exp)
 
         saved = ExpenseRepository.save_many(expenses)
 
-        # define o parent_id da primeira como ela mesma para agrupar
         saved[0].parent_id = saved[0].id
         for s in saved[1:]:
             s.parent_id = saved[0].id
         ExpenseRepository.save_many(saved)
 
-        # verifica impacto na meta com o valor total — RF016
         if data['type'] == 'expense':
             GoalService.check_goal_impact(user_id, data['amount'])
 
@@ -91,11 +87,11 @@ class ExpenseService:
     def _create_recurring(user_id: int, data: dict) -> list[Expense]:
         """
         Gera registros recorrentes até recurrence_end_date.
-        Se não houver end_date, gera 12 meses à frente. RF010 / RN003.
+        Se não houver end_date, gera 12 ocorrências. RF010 / RN003.
         """
-        recurrence_type    = data['recurrence_type']
-        base_date: date    = data['date']
-        end_date: date     = data.get('recurrence_end_date')
+        recurrence_type  = data['recurrence_type']
+        base_date: date  = data['date']
+        end_date: date   = data.get('recurrence_end_date')
 
         delta_map = {
             'weekly':  relativedelta(weeks=1),
@@ -104,13 +100,10 @@ class ExpenseService:
         }
         delta = delta_map[recurrence_type]
 
-        # sem end_date → gera 12 ocorrências
         if not end_date:
-            occurrences = 12
-            dates = [base_date + delta * i for i in range(occurrences)]
+            dates = [base_date + delta * i for i in range(12)]
         else:
-            dates = []
-            current = base_date
+            dates, current = [], base_date
             while current <= end_date:
                 dates.append(current)
                 current += delta
@@ -129,13 +122,14 @@ class ExpenseService:
                 is_recurring=True,
                 recurrence_type=recurrence_type,
                 recurrence_end_date=end_date,
+                transaction_nature=data.get('transaction_nature', 'variable'),
+                status=data.get('status', 'paid'),
                 category_id=data.get('category_id'),
             )
             expenses.append(exp)
 
         saved = ExpenseRepository.save_many(expenses)
 
-        # agrupa pelo id da primeira ocorrência
         saved[0].parent_id = saved[0].id
         for s in saved[1:]:
             s.parent_id = saved[0].id
@@ -157,13 +151,14 @@ class ExpenseService:
     def get_by_month(user_id: int, year: int, month: int) -> list[Expense]:
         return ExpenseRepository.get_by_month(user_id, year, month)
 
+    @staticmethod
+    def get_by_category(user_id: int, category_id: int) -> list[Expense]:
+        return ExpenseRepository.get_by_category(user_id, category_id)
+
     # ── Edição ────────────────────────────────────────────────────────────────
 
     @staticmethod
     def update(user_id: int, expense_id: int, data: dict) -> Expense | None:
-        """
-        Edita apenas o registro individual — não propaga para parcelas irmãs.
-        """
         expense = ExpenseRepository.get_by_id(expense_id, user_id)
         if not expense:
             return None
@@ -178,19 +173,14 @@ class ExpenseService:
 
     @staticmethod
     def delete(user_id: int, expense_id: int, delete_siblings: bool = False) -> bool:
-        """
-        delete_siblings=True → apaga todas as parcelas/recorrências do grupo.
-        delete_siblings=False → apaga só o registro individual. RF004.
-        """
         expense = ExpenseRepository.get_by_id(expense_id, user_id)
         if not expense:
             return False
 
         if delete_siblings and expense.parent_id:
             siblings = ExpenseRepository.get_children(expense.parent_id)
-            # inclui o próprio parent se ele existir separado
-            parent = ExpenseRepository.get_by_id(expense.parent_id, user_id)
-            targets = siblings + ([parent] if parent and parent.id != expense.id else [])
+            parent   = ExpenseRepository.get_by_id(expense.parent_id, user_id)
+            targets  = siblings + ([parent] if parent and parent.id != expense.id else [])
             targets.append(expense)
             ExpenseRepository.delete_many(list({e.id: e for e in targets}.values()))
         else:
@@ -201,16 +191,47 @@ class ExpenseService:
     # ── Saldo ─────────────────────────────────────────────────────────────────
 
     @staticmethod
-    def get_balance(user_id: int) -> dict:
-        """
-        Calcula saldo atual do usuário. RF011 / RN004.
-        Saldo = soma das entradas - soma das saídas confirmadas.
-        """
-        expenses = ExpenseRepository.get_all_by_user(user_id)
-        income  = sum(e.amount for e in expenses if e.type == 'income')
-        outcome = sum(e.amount for e in expenses if e.type == 'expense')
+    def get_balance(user_id: int, year: int = None, month: int = None) -> dict:
+        today = date.today()
+
+        if year and month:
+            paid   = ExpenseRepository.get_paid_by_month(user_id, year, month)
+            active = ExpenseRepository.get_active_by_month(user_id, year, month)
+
+            # acumulado só até o mês atual real — ignora meses futuros
+            acc_year  = min(year,  today.year)
+            acc_month = month if year < today.year else min(month, today.month)
+
+            prev = ExpenseRepository.get_paid_before_month(user_id, acc_year, acc_month)
+        else:
+            paid   = ExpenseRepository.get_paid_all(user_id)
+            active = ExpenseRepository.get_active_all(user_id)
+            prev   = []
+
+        # saldo real
+        income_r  = sum(e.amount for e in paid if e.type == 'income')
+        outcome_r = sum(e.amount for e in paid if e.type == 'expense')
+
+        # saldo estimado
+        income_e  = sum(e.amount for e in active if e.type == 'income')
+        outcome_e = sum(e.amount for e in active if e.type == 'expense')
+
+        # acumulado
+        acc_income  = sum(e.amount for e in prev if e.type == 'income')
+        acc_outcome = sum(e.amount for e in prev if e.type == 'expense')
+
         return {
-            'income':  round(income, 2),
-            'outcome': round(outcome, 2),
-            'balance': round(income - outcome, 2),
+            'real': {
+                'income':  round(income_r, 2),
+                'outcome': round(outcome_r, 2),
+                'balance': round(income_r - outcome_r, 2),
+            },
+            'estimated': {
+                'income':  round(income_e, 2),
+                'outcome': round(outcome_e, 2),
+                'balance': round(income_e - outcome_e, 2),
+            },
+            'accumulated': round(acc_income - acc_outcome, 2),
         }
+        
+        #____________________________________________________________________________________________________

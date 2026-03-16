@@ -6,7 +6,7 @@ from app.firebase import login_required, api_login_required
 from app.expenses.schemas import ExpenseSchema, ExpenseUpdateSchema
 from app.expenses.services import ExpenseService
 
-expenses_bp = Blueprint('expenses', __name__, url_prefix='/expenses')
+expenses_bp = Blueprint('expenses', __name__, url_prefix='/expenses', template_folder='templates/expenses')
 
 expense_schema        = ExpenseSchema()
 expense_update_schema = ExpenseUpdateSchema()
@@ -26,7 +26,7 @@ def index(user_id: int):
     balance  = ExpenseService.get_balance(user_id)
 
     return render_template(
-        'expenses/index.html',
+        'expenses.html',
         expenses=expenses,
         balance=balance,
         current_month=today.month,

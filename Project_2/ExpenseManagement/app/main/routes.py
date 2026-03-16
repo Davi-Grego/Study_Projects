@@ -1,13 +1,19 @@
-from flask import Blueprint, render_template, session
-from app.models.user import get_user_name
-from app.auth.routes import login_required
+from app.firebase import login_required
+from app.reports.services import ReportService
+from flask import Blueprint, render_template, redirect, url_for
+from datetime import date
 
-bp = Blueprint('main', __name__, template_folder='templates/main')
+main_bp = Blueprint('main', __name__, template_folder='templates/main')
 
+@main_bp.route('/')
+def home():
+    return redirect(url_for('auth.login'))
 
-@bp.route('/')
+@main_bp.route('/dashboard')
 @login_required
-def index():
-
-    user_name = get_user_name(session.get('user_id'))  # Exemplo de uso do método get_user_name
-    return render_template('index.html', user_name=user_name)    
+def dashboard(user_id):
+    today = date.today()
+    return render_template('dashboard.html',
+        current_year=today.year,
+        current_month=today.month,
+    )

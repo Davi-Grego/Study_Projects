@@ -13,17 +13,17 @@ def create_app(config_class=DevelopmentConfig):
     
     with app.app_context():
         from app.models import User, Expense, Goal, Category
-        from app.categories.services import CategoryService
-        
         db.create_all() 
-        init_firebase(app)    
+        init_firebase(app) 
+        
+        from app.categories.services import CategoryService
         CategoryService.seed_defaults()
 
     # 3. Registro de Blueprints (Sua estrutura modular) 
-    from app.main.routes import bp as main_bp
+    from app.main.routes import main_bp
     app.register_blueprint(main_bp)
 
-    from app.auth.routes import bp as auth_bp
+    from app.auth.routes import auth_bp
     app.register_blueprint(auth_bp)
 
     from app.expenses.routes import expenses_bp
@@ -34,5 +34,8 @@ def create_app(config_class=DevelopmentConfig):
 
     from app.goals.routes import goals_bp
     app.register_blueprint(goals_bp)
-        
+    
+    from app.reports.routes import reports_bp
+    app.register_blueprint(reports_bp)
+    
     return app

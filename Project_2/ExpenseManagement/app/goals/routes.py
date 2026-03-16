@@ -5,7 +5,7 @@ from app.firebase import login_required, api_login_required
 from app.goals.schemas import GoalSchema, GoalUpdateSchema
 from app.goals.services import GoalService
 
-goals_bp = Blueprint('goals', __name__, url_prefix='/goals')
+goals_bp = Blueprint('goals', __name__, url_prefix='/goals', template_folder='templates/goals')
 
 goal_schema        = GoalSchema()
 goal_update_schema = GoalUpdateSchema()
@@ -18,7 +18,7 @@ goal_update_schema = GoalUpdateSchema()
 def index(user_id: int):
     """Página de metas com dados iniciais já renderizados."""
     goals = GoalService.get_all(user_id)
-    return render_template('goals/index.html', goals=goals)
+    return render_template('goals.html', goals=goals)
 
 
 # ── API (JSON) ────────────────────────────────────────────────────────────────

@@ -5,7 +5,7 @@ from app.firebase import login_required, api_login_required
 from app.categories.schemas import CategorySchema, CategoryUpdateSchema
 from app.categories.services import CategoryService
 
-categories_bp = Blueprint('categories', __name__, url_prefix='/categories')
+categories_bp = Blueprint('categories', __name__, url_prefix='/categories', template_folder='templates/categories')
 
 category_schema        = CategorySchema()
 category_update_schema = CategoryUpdateSchema()
@@ -18,7 +18,7 @@ category_update_schema = CategoryUpdateSchema()
 def index(user_id: int):
     """Página de gerenciamento de categorias do usuário."""
     categories = CategoryService.get_user_categories(user_id)
-    return render_template('categories/index.html', categories=categories)
+    return render_template('categories.html', categories=categories)
 
 
 # ── API (JSON) ────────────────────────────────────────────────────────────────

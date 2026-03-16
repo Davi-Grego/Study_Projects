@@ -6,26 +6,28 @@ from app.firebase import login_required,verify_token
 from app.auth.services import AuthService
 from flask import request, jsonify
 
-bp = Blueprint('auth', __name__, url_prefix='/auth', template_folder='templates/auth')
+auth_bp = Blueprint('auth', __name__, url_prefix='/auth', template_folder='templates/auth')
 
 
-@bp.route('/')
+@auth_bp.route('/')
 def index():
     return redirect(url_for('auth.login'))
 
-@bp.route('/login')
+@auth_bp.route('/login')
 def login():  # Exemplo de uso do método get_user_name
+    if 'user_id' in session:
+        return redirect(url_for('main.dashboard'))
     return render_template('login.html')
 
 @login_required
-@bp.route('/logout')
+@auth_bp.route('/logout')
 def logout():
     from flask import session
     session.pop('user_id', None)
     flash('You have been logged out.', 'success')
     return redirect(url_for('auth.login'))
 
-@bp.route("/firebase-callback", methods=["POST"])
+@auth_bp.route("/firebase-callback", methods=["POST"])
 def firebase_callback():
     data = request.get_json()
     decoded = verify_token(data.get("idToken"))

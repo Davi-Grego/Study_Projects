@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+{% block title %}Relatórios — FinControl{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="p-4 lg:p-6 max-w-7xl mx-auto">
+
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-lg font-medium text-gray-100">Relatórios</h1>
+  </div>
+
+  {# ── Controles de período ── #}
+  <div class="bg-surface border border-surface-border rounded-xl p-4 mb-5">
+    <div class="flex flex-wrap gap-3 items-end">
+
+      <div>
+        <label class="block text-xs text-gray-500 mb-1.5">Visualização</label>
+        <select id="view-mode" onchange="onViewModeChange()"
+                class="bg-[#1a1a1a] border border-surface-border text-gray-300 text-sm
+                       rounded-lg px-3 py-2 focus:outline-none focus:border-gray-500">
+          <option value="monthly">Por mês</option>
+          <option value="yearly">Por ano</option>
+          <option value="period">Período livre</option>
+        </select>
+      </div>
+
+      <div id="ctrl-month" class="flex gap-2">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1.5">Mês</label>
+          <select id="sel-month"
+                  class="bg-[#1a1a1a] border border-surface-border text-gray-300 text-sm
+                         rounded-lg px-3 py-2 focus:outline-none focus:border-gray-500">
+            {% for m, name in [(1,'Janeiro'),(2,'Fevereiro'),(3,'Março'),(4,'Abril'),
+                               (5,'Maio'),(6,'Junho'),(7,'Julho'),(8,'Agosto'),
+                               (9,'Setembro'),(10,'Outubro'),(11,'Novembro'),(12,'Dezembro')] %}
+              <option value="{{ m }}" {{ 'selected' if m == current_month }}>{{ name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1.5">Ano</label>
+          <select id="sel-year"
+                  class="bg-[#1a1a1a] border border-surface-border text-gray-300 text-sm
+                         rounded-lg px-3 py-2 focus:outline-none focus:border-gray-500">
+            {% for y in range(current_year, current_year - 5, -1) %}
+              <option value="{{ y }}" {{ 'selected' if y == current_year }}>{{ y }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div id="ctrl-period" class="hidden flex gap-2">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1.5">De</label>
+          <input id="period-start" type="date"
+                 class="bg-[#1a1a1a] border border-surface-border text-gray-300 text-sm
+                        rounded-lg px-3 py-2 focus:outline-none focus:border-gray-500" />
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1.5">Até</label>
+          <input id="period-end" type="date"
+                 class="bg-[#1a1a1a] border border-surface-border text-gray-300 text-sm
+                        rounded-lg px-3 py-2 focus:outline-none focus:border-gray-500" />
+        </div>
+      </div>
+
+      <button onclick="loadReport()"
+              class="px-4 py-2 bg-brand hover:bg-brand-dark text-white text-sm
+                     rounded-lg transition-colors">
+        Gerar
+      </button>
+    </div>
+  </div>
+
+  {# ── Cards de totais ── #}
+  <div class="grid grid-cols-3 gap-3 mb-5">
+    <div class="bg-surface border border-surface-border rounded-xl p-4">
+      <p class="text-[11px] text-gray-600 mb-1.5">Entradas</p>
+      <p id="r-income" class="text-xl font-medium text-[#1D9E75]">—</p>
+    </div>
+    <div class="bg-surface border border-surface-border rounded-xl p-4">
+      <p class="text-[11px] text-gray-600 mb-1.5">Saídas</p>
+      <p id="r-outcome" class="text-xl font-medium text-[#E24B4A]">—</p>
+    </div>
+    <div class="bg-surface border border-surface-border rounded-xl p-4">
+      <p class="text-[11px] text-gray-600 mb-1.5">Saldo</p>
+      <p id="r-balance" class="text-xl font-medium text-gray-100">—</p>
+    </div>
+  </div>
+
+  {# ── Gráficos ── #}
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5">
+
+    <div class="bg-surface border border-surface-border rounded-xl p-4">
+      <h2 class="text-[13px] font-medium text-gray-300 mb-4">Evolução mensal</h2>
+      <div class="relative h-52">
+        <canvas id="chart-line"></canvas>
+      </div>
+    </div>
+
+    <div class="bg-surface border border-surface-border rounded-xl p-4">
+      <h2 class="text-[13px] font-medium text-gray-300 mb-4">Gastos por categoria</h2>
+      <div class="flex items-center gap-4">
+        <div class="relative h-44 w-44 shrink-0">
+          <canvas id="chart-donut"></canvas>
+        </div>
+        <div id="donut-legend" class="flex flex-col gap-2 min-w-0 flex-1"></div>
+      </div>
+    </div>
+
+  </div>
+
+  {# ── Tabela de transações ── #}
+  <div class="bg-surface border border-surface-border rounded-xl overflow-hidden">
+    <div class="px-4 py-3 border-b border-[#222]">
+      <h2 class="text-[13px] font-medium text-gray-300">Transações do período</h2>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm" style="table-layout:fixed">
+        <thead>
+          <tr class="border-b border-[#222]">
+            <th class="text-left text-[11px] text-gray-600 font-medium px-4 py-3 w-[38%]">Descrição</th>
+            <th class="text-left text-[11px] text-gray-600 font-medium px-4 py-3 w-[20%]">Categoria</th>
+            <th class="text-left text-[11px] text-gray-600 font-medium px-4 py-3 w-[15%]">Data</th>
+            <th class="text-left text-[11px] text-gray-600 font-medium px-4 py-3 w-[12%]">Tipo</th>
+            <th class="text-right text-[11px] text-gray-600 font-medium px-4 py-3 w-[15%]">Valor</th>
+          </tr>
+        </thead>
+        <tbody id="report-tbody">
+          <tr><td colspan="5" class="text-center text-gray-600 text-sm py-10">Selecione um período e clique em Gerar.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+
+{% block extra_scripts %}
+<script>
+const fmt = v => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v);
+const MONTHS=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const COLORS=['#7F77DD','#1D9E75','#E24B4A','#BA7517','#378ADD','#D85A30','#D4537E','#639922','#888780'];
+
+let lineChart  = null;
+let donutChart = null;
+let categories = [];
+
+(async () => {
+  const res = await fetch('/categories/api');
+  if (res.ok) categories = await res.json();
+  loadReport();
+})();
+
+function onViewModeChange() {
+  const mode = document.getElementById('view-mode').value;
+  document.getElementById('ctrl-month').classList.toggle('hidden', mode !== 'monthly');
+  document.getElementById('ctrl-period').classList.toggle('hidden', mode !== 'period');
+}
+
+async function loadReport() {
+  const mode = document.getElementById('view-mode').value;
+  let url;
+
+  if (mode === 'monthly') {
+    const year  = document.getElementById('sel-year').value;
+    const month = document.getElementById('sel-month').value;
+    url = `/reports/api/monthly?year=${year}&month=${month}`;
+  } else if (mode === 'yearly') {
+    const year = document.getElementById('sel-year').value;
+    url = `/reports/api/yearly?year=${year}`;
+  } else {
+    const start = document.getElementById('period-start').value;
+    const end   = document.getElementById('period-end').value;
+    if (!start || !end) return;
+    url = `/reports/api/period?start=${start}&end=${end}`;
+  }
+
+  const res  = await fetch(url);
+  if (!res.ok) return;
+  const data = await res.json();
+
+  document.getElementById('r-income').textContent  = fmt(data.income);
+  document.getElementById('r-outcome').textContent = fmt(data.outcome);
+  const balEl = document.getElementById('r-balance');
+  balEl.textContent = fmt(data.balance);
+  balEl.className = `text-xl font-medium ${data.balance >= 0 ? 'text-[#1D9E75]' : 'text-[#E24B4A]'}`;
+
+  renderLineChart(data);
+  renderDonut(data.by_category || []);
+  renderTable(data.transactions || []);
+}
+
+function renderLineChart(data) {
+  const ctx = document.getElementById('chart-line').getContext('2d');
+  if (lineChart) lineChart.destroy();
+
+  let labels, income, outcome;
+
+  if (data.monthly_breakdown) {
+    labels  = data.monthly_breakdown.map(m => MONTHS[m.month-1]);
+    income  = data.monthly_breakdown.map(m => m.income);
+    outcome = data.monthly_breakdown.map(m => m.outcome);
+  } else if (data.transactions) {
+    // agrupa por dia para períodos curtos
+    const byDate = {};
+    data.transactions.forEach(e => {
+      if (!byDate[e.date]) byDate[e.date] = {i:0,o:0};
+      if (e.type==='income') byDate[e.date].i += e.amount;
+      else                   byDate[e.date].o += e.amount;
+    });
+    labels  = Object.keys(byDate).map(d => new Date(d+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}));
+    income  = Object.values(byDate).map(v => Math.round(v.i*100)/100);
+    outcome = Object.values(byDate).map(v => Math.round(v.o*100)/100);
+  } else { return; }
+
+  lineChart = new Chart(ctx, {
+    type:'line',
+    data:{ labels, datasets:[
+      { label:'Entradas', data:income,  borderColor:'#1D9E75', backgroundColor:'transparent', tension:0.3, pointRadius:3 },
+      { label:'Saídas',   data:outcome, borderColor:'#7F77DD', backgroundColor:'transparent', tension:0.3, pointRadius:3 },
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ labels:{ color:'#666', font:{size:11}, boxWidth:12 }},
+                tooltip:{ callbacks:{ label: c => fmt(c.parsed.y) }}},
+      scales:{
+        x:{ grid:{color:'#1f1f1f'}, ticks:{color:'#555',font:{size:11}} },
+        y:{ grid:{color:'#1f1f1f'}, ticks:{color:'#555',font:{size:11}, callback: v=>'R$'+(v>=1000?(v/1000).toFixed(1)+'k':v)} },
+      },
+    },
+  });
+}
+
+function renderDonut(byCategory) {
+  const ctx = document.getElementById('chart-donut').getContext('2d');
+  if (donutChart) donutChart.destroy();
+
+  const legend = document.getElementById('donut-legend');
+
+  if (!byCategory.length) {
+    legend.innerHTML = '<p class="text-[12px] text-gray-600">Sem dados de saída.</p>';
+    return;
+  }
+
+  const labels = byCategory.map(c => c.category_name);
+  const values = byCategory.map(c => c.total);
+  const colors = byCategory.map((_,i) => COLORS[i % COLORS.length]);
+
+  donutChart = new Chart(ctx, {
+    type:'doughnut',
+    data:{ labels, datasets:[{ data:values, backgroundColor:colors, borderWidth:0, hoverOffset:4 }]},
+    options:{
+      responsive:true, maintainAspectRatio:false, cutout:'70%',
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c => fmt(c.parsed) }}},
+    },
+  });
+
+  const total = values.reduce((a,b)=>a+b,0);
+  legend.innerHTML = byCategory.map((c,i) => `
+    <div class="flex items-center gap-2 min-w-0">
+      <span class="w-2 h-2 rounded-sm shrink-0" style="background:${colors[i]}"></span>
+      <span class="text-[11px] text-gray-500 truncate">${c.category_name}</span>
+      <span class="text-[11px] text-gray-600 ml-auto shrink-0">${((c.total/total)*100).toFixed(0)}%</span>
+    </div>`
+  ).join('');
+}
+
+function renderTable(transactions) {
+  const tbody = document.getElementById('report-tbody');
+  if (!transactions.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-600 text-sm py-8">Nenhuma transação no período.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = transactions.map(e => {
+    const isIncome = e.type === 'income';
+    const catName  = categories.find(c=>c.id===e.category_id)?.name || '—';
+    const date     = new Date(e.date+'T00:00:00').toLocaleDateString('pt-BR');
+    return `
+    <tr class="border-b border-[#1e1e1e] hover:bg-[#1a1a1a] transition-colors">
+      <td class="px-4 py-3 text-[13px] text-gray-300 truncate">${e.description}</td>
+      <td class="px-4 py-3 text-[12px] text-gray-500 truncate">${catName}</td>
+      <td class="px-4 py-3 text-[12px] text-gray-500">${date}</td>
+      <td class="px-4 py-3">
+        <span class="text-[11px] px-2 py-0.5 rounded
+          ${isIncome ? 'bg-[#0a2e1a] text-[#1D9E75]' : 'bg-[#2a1a1a] text-[#E24B4A]'}">
+          ${isIncome ? 'entrada' : 'saída'}
+        </span>
+      </td>
+      <td class="px-4 py-3 text-right text-[13px] font-medium
+                 ${isIncome ? 'text-[#1D9E75]' : 'text-[#E24B4A]'}">
+        ${isIncome ? '+' : '-'} ${fmt(e.amount)}
+      </td>
+    </tr>`;
+  }).join('');
+}
+</script>
+{% endblock %}

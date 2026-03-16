@@ -1,0 +1,605 @@
+{% extends "base.html" %}
+{% block title %}Movimentações — FinControl{% endblock %}
+
+{% block content %}
+<div class="p-4 lg:p-6 max-w-7xl mx-auto">
+
+  {# ── Cabeçalho ── #}
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-lg font-medium text-gray-100">Movimentações</h1>
+  </div>
+
+  {# ── Filtros ── #}
+  <div class="bg-surface border border-surface-border rounded-xl p-4 mb-4">
+    <div class="flex flex-wrap gap-3">
+
+      <select id="filter-type"
+              class="bg-[#1a1a1a] border border-surface-border text-gray-300 text-sm
+                     rounded-lg px-3 py-2 focus:outline-none focus:border-gray-500">
+        <option value="">Todos os tipos</option>
+        <option value="income">Entradas</option>
+        <option value="expense">Saídas</option>
+      </select>
+
+      <select id="filter-status"
+              class="bg-[#1a1a1a] border border-surface-border text-gray-300 text-sm
+                     rounded-lg px-3 py-2 focus:outline-none focus:border-gray-500">
+        <option value="">Todos os status</option>
+        <option value="paid">Pago / Recebido</option>
+        <option value="pending">Pendente</option>
+        <option value="cancelled">Cancelado</option>
+      </select>
+
+      <select id="filter-category"
+              class="bg-[#1a1a1a] border border-surface-border text-gray-300 text-sm
+                     rounded-lg px-3 py-2 focus:outline-none focus:border-gray-500">
+        <option value="">Todas as categorias</option>
+      </select>
+
+      <input id="filter-start" type="date"
+             class="bg-[#1a1a1a] border border-surface-border text-gray-300 text-sm
+                    rounded-lg px-3 py-2 focus:outline-none focus:border-gray-500" />
+
+      <input id="filter-end" type="date"
+             class="bg-[#1a1a1a] border border-surface-border text-gray-300 text-sm
+                    rounded-lg px-3 py-2 focus:outline-none focus:border-gray-500" />
+
+      <button onclick="applyFilters()"
+              class="px-4 py-2 bg-brand hover:bg-brand-dark text-white text-sm
+                     rounded-lg transition-colors">
+        Filtrar
+      </button>
+
+      <button onclick="clearFilters()"
+              class="px-4 py-2 bg-surface hover:bg-surface-hover border border-surface-border
+                     text-gray-400 text-sm rounded-lg transition-colors">
+        Limpar
+      </button>
+    </div>
+  </div>
+
+  {# ── Tabela ── #}
+  <div class="bg-surface border border-surface-border rounded-xl overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm" style="table-layout:fixed">
+        <thead>
+          <tr class="border-b border-[#222]">
+            <th class="text-left text-[11px] text-gray-600 font-medium px-4 py-3 w-[30%]">Descrição</th>
+            <th class="text-left text-[11px] text-gray-600 font-medium px-4 py-3 w-[15%]">Categoria</th>
+            <th class="text-left text-[11px] text-gray-600 font-medium px-4 py-3 w-[12%]">Data</th>
+            <th class="text-left text-[11px] text-gray-600 font-medium px-4 py-3 w-[10%]">Tipo</th>
+            <th class="text-left text-[11px] text-gray-600 font-medium px-4 py-3 w-[12%]">Status</th>
+            <th class="text-right text-[11px] text-gray-600 font-medium px-4 py-3 w-[13%]">Valor</th>
+            <th class="px-4 py-3 w-[8%]"></th>
+          </tr>
+        </thead>
+        <tbody id="expenses-tbody">
+          <tr>
+            <td colspan="7" class="text-center text-gray-600 text-sm py-10">Carregando...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+{# ── Botão flutuante ── #}
+<button onclick="openModal()"
+        class="fixed bottom-24 right-5 lg:bottom-6 lg:right-6 z-10
+               w-12 h-12 bg-brand hover:bg-brand-dark rounded-full
+               flex items-center justify-center shadow-lg transition-colors">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+       stroke="white" stroke-width="2">
+    <path d="M12 5v14M5 12h14"/>
+  </svg>
+</button>
+
+{# ══════════════════════════════════════════════
+   MODAL — Criar / Editar movimentação
+   ══════════════════════════════════════════════ #}
+<div id="modal-overlay"
+     class="fixed inset-0 z-40 bg-black/70 hidden items-center justify-center p-4"
+     onclick="if(event.target===this) closeModal()">
+
+  <div class="bg-[#141414] border border-surface-border rounded-xl w-full max-w-md
+              max-h-[90vh] overflow-y-auto">
+
+    <div class="flex items-center justify-between px-5 py-4 border-b border-surface-border">
+      <h2 id="modal-title" class="text-[15px] font-medium text-gray-100">Nova movimentação</h2>
+      <button onclick="closeModal()" class="text-gray-600 hover:text-gray-300 transition-colors">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="px-5 py-4 flex flex-col gap-4">
+
+      <input type="hidden" id="expense-id" />
+
+      {# Tipo entrada/saída #}
+      <div>
+        <label class="block text-xs text-gray-500 mb-1.5">Tipo</label>
+        <div class="flex gap-2">
+          <button id="btn-income" onclick="setType('income')"
+                  class="flex-1 py-2 rounded-lg text-sm border transition-colors
+                         border-surface-border text-gray-400">
+            Entrada
+          </button>
+          <button id="btn-expense" onclick="setType('expense')"
+                  class="flex-1 py-2 rounded-lg text-sm border transition-colors
+                         border-surface-border text-gray-400">
+            Saída
+          </button>
+        </div>
+      </div>
+
+      {# Descrição #}
+      <div>
+        <label class="block text-xs text-gray-500 mb-1.5">Descrição</label>
+        <input id="f-description" type="text" placeholder="Ex: Aluguel, Salário..."
+               class="w-full bg-[#1a1a1a] border border-surface-border text-gray-200 text-sm
+                      rounded-lg px-3 py-2.5 focus:outline-none focus:border-gray-500" />
+      </div>
+
+      {# Valor e Data #}
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1.5">Valor (R$)</label>
+          <input id="f-amount" type="number" step="0.01" min="0.01" placeholder="0,00"
+                 class="w-full bg-[#1a1a1a] border border-surface-border text-gray-200 text-sm
+                        rounded-lg px-3 py-2.5 focus:outline-none focus:border-gray-500" />
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1.5">Data</label>
+          <input id="f-date" type="date"
+                 class="w-full bg-[#1a1a1a] border border-surface-border text-gray-200 text-sm
+                        rounded-lg px-3 py-2.5 focus:outline-none focus:border-gray-500" />
+        </div>
+      </div>
+
+      {# Categoria #}
+      <div>
+        <label class="block text-xs text-gray-500 mb-1.5">Categoria</label>
+        <select id="f-category"
+                class="w-full bg-[#1a1a1a] border border-surface-border text-gray-200 text-sm
+                       rounded-lg px-3 py-2.5 focus:outline-none focus:border-gray-500">
+          <option value="">Sem categoria</option>
+        </select>
+      </div>
+
+      {# Natureza — fixa ou variável #}
+      <div>
+        <label class="block text-xs text-gray-500 mb-1.5">Natureza</label>
+        <div class="flex gap-2">
+          <button id="btn-variable" onclick="setNature('variable')"
+                  class="flex-1 py-2 rounded-lg text-sm border transition-colors
+                         border-brand bg-brand text-white">
+            Variável
+          </button>
+          <button id="btn-fixed" onclick="setNature('fixed')"
+                  class="flex-1 py-2 rounded-lg text-sm border transition-colors
+                         border-surface-border text-gray-400">
+            Fixa
+          </button>
+        </div>
+      </div>
+
+      {# Status de pagamento #}
+      <div>
+        <label class="block text-xs text-gray-500 mb-1.5">Status</label>
+        <select id="f-status"
+                class="w-full bg-[#1a1a1a] border border-surface-border text-gray-200 text-sm
+                       rounded-lg px-3 py-2.5 focus:outline-none focus:border-gray-500">
+          <option value="paid">Pago / Recebido</option>
+          <option value="pending">Pendente</option>
+          <option value="cancelled">Cancelado</option>
+        </select>
+      </div>
+
+      {# Forma de pagamento — visível para entradas e saídas #}
+      <div id="payment-section">
+        <label class="block text-xs text-gray-500 mb-1.5">Forma de pagamento</label>
+        <select id="f-payment-type" onchange="onPaymentTypeChange()"
+                class="w-full bg-[#1a1a1a] border border-surface-border text-gray-200 text-sm
+                       rounded-lg px-3 py-2.5 focus:outline-none focus:border-gray-500">
+          <option value="single">À vista</option>
+          <option value="installment">Parcelado</option>
+          <option value="recurring">Recorrente</option>
+        </select>
+      </div>
+
+      {# Parcelas — aparece se parcelado #}
+      <div id="installment-section" class="hidden">
+        <label class="block text-xs text-gray-500 mb-1.5">Número de parcelas</label>
+        <input id="f-installments" type="number" min="2" max="360" placeholder="Ex: 12"
+               class="w-full bg-[#1a1a1a] border border-surface-border text-gray-200 text-sm
+                      rounded-lg px-3 py-2.5 focus:outline-none focus:border-gray-500" />
+      </div>
+
+      {# Recorrência — aparece se recorrente #}
+      <div id="recurrence-section" class="hidden flex flex-col gap-3">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1.5">Periodicidade</label>
+          <select id="f-recurrence-type"
+                  class="w-full bg-[#1a1a1a] border border-surface-border text-gray-200 text-sm
+                         rounded-lg px-3 py-2.5 focus:outline-none focus:border-gray-500">
+            <option value="monthly">Mensal</option>
+            <option value="weekly">Semanal</option>
+            <option value="yearly">Anual</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1.5">Data final (opcional)</label>
+          <input id="f-recurrence-end" type="date"
+                 class="w-full bg-[#1a1a1a] border border-surface-border text-gray-200 text-sm
+                        rounded-lg px-3 py-2.5 focus:outline-none focus:border-gray-500" />
+        </div>
+      </div>
+
+      {# Erro #}
+      <p id="modal-error"
+         class="hidden text-xs text-red-400 bg-red-950 border border-red-800
+                rounded-lg px-3 py-2">
+      </p>
+
+      {# Ações #}
+      <div class="flex gap-3 pt-1">
+        <button onclick="closeModal()"
+                class="flex-1 py-2.5 bg-surface hover:bg-surface-hover border border-surface-border
+                       text-gray-400 text-sm rounded-lg transition-colors">
+          Cancelar
+        </button>
+        <button id="btn-submit" onclick="submitExpense()"
+                class="flex-1 py-2.5 bg-brand hover:bg-brand-dark text-white text-sm
+                       rounded-lg transition-colors disabled:opacity-50">
+          Salvar
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{# Modal de confirmação de exclusão #}
+<div id="delete-overlay"
+     class="fixed inset-0 z-50 bg-black/70 hidden items-center justify-center p-4">
+  <div class="bg-[#141414] border border-surface-border rounded-xl w-full max-w-sm p-5">
+    <h3 class="text-[15px] font-medium text-gray-100 mb-2">Excluir movimentação</h3>
+    <p class="text-sm text-gray-500 mb-5">Tem certeza? Esta ação não pode ser desfeita.</p>
+    <div id="delete-group-option" class="hidden mb-4">
+      <label class="flex items-center gap-2 text-sm text-gray-400 cursor-pointer">
+        <input type="checkbox" id="delete-all-check" class="accent-brand w-4 h-4" />
+        Excluir todas as parcelas / recorrências do grupo
+      </label>
+    </div>
+    <div class="flex gap-3">
+      <button onclick="closeDeleteModal()"
+              class="flex-1 py-2.5 bg-surface border border-surface-border
+                     text-gray-400 text-sm rounded-lg hover:bg-surface-hover transition-colors">
+        Cancelar
+      </button>
+      <button onclick="confirmDelete()"
+              class="flex-1 py-2.5 bg-red-900 hover:bg-red-800 text-red-200 text-sm
+                     rounded-lg transition-colors">
+        Excluir
+      </button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+
+{% block extra_scripts %}
+<script>
+const fmt = v => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v);
+
+let allExpenses    = [];
+let categories     = [];
+let selectedType   = 'expense';
+let selectedNature = 'variable';
+let deleteTarget   = null;
+
+const STATUS_LABEL = { paid:'pago', pending:'pendente', cancelled:'cancelado' };
+const STATUS_CLASS = {
+  paid:      'bg-[#0a2e1a] text-[#1D9E75]',
+  pending:   'bg-[#2a1f0a] text-[#BA7517]',
+  cancelled: 'bg-[#222]    text-gray-500',
+};
+
+// ── init ──────────────────────────────────────────────────────────────────────
+(async () => {
+  await loadCategories();
+  await loadExpenses();
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = String(today.getMonth()+1).padStart(2,'0');
+  const last = new Date(y, today.getMonth()+1, 0).getDate().toString().padStart(2,'0');
+  document.getElementById('filter-start').value = `${y}-${m}-01`;
+  document.getElementById('filter-end').value   = `${y}-${m}-${last}`;
+})();
+
+// ── categorias ────────────────────────────────────────────────────────────────
+async function loadCategories() {
+  const res = await fetch('/categories/api');
+  if (!res.ok) return;
+  categories = await res.json();
+
+  ['filter-category','f-category'].forEach(id => {
+    const el = document.getElementById(id);
+    categories.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value       = c.id;
+      opt.textContent = c.name + (c.is_global ? '' : ' ★');
+      el.appendChild(opt);
+    });
+  });
+}
+
+// ── carregar movimentações ────────────────────────────────────────────────────
+async function loadExpenses(params='') {
+  const res = await fetch('/expenses/api/filter' + (params ? '?'+params : ''));
+  if (!res.ok) return;
+  allExpenses = await res.json();
+  renderTable(allExpenses);
+}
+
+function renderTable(expenses) {
+  const tbody = document.getElementById('expenses-tbody');
+
+  if (!expenses.length) {
+    tbody.innerHTML = `<tr><td colspan="7"
+      class="text-center text-gray-600 text-sm py-10">
+      Nenhuma movimentação encontrada.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = expenses.map(e => {
+    const isIncome = e.type === 'income';
+    const catName  = categories.find(c => c.id === e.category_id)?.name || '—';
+    const date     = new Date(e.date+'T00:00:00').toLocaleDateString('pt-BR');
+
+    const payBadge = e.payment_type === 'installment'
+      ? `<span class="text-[10px] bg-[#1a1a2e] text-brand px-1.5 py-0.5 rounded ml-1">
+           ${e.installment_number}/${e.total_installments}
+         </span>`
+      : e.payment_type === 'recurring'
+      ? `<span class="text-[10px] bg-[#1a2e1a] text-[#1D9E75] px-1.5 py-0.5 rounded ml-1">
+           recorrente
+         </span>`
+      : '';
+
+    const natureBadge = e.transaction_nature === 'fixed'
+      ? `<span class="text-[10px] bg-[#1e1e1e] text-gray-500 px-1.5 py-0.5 rounded ml-1">
+           fixa
+         </span>`
+      : '';
+
+    return `
+    <tr class="border-b border-[#1e1e1e] hover:bg-[#1a1a1a] transition-colors
+               ${e.status === 'cancelled' ? 'opacity-50' : ''}">
+      <td class="px-4 py-3">
+        <span class="text-[13px] text-gray-300 truncate block max-w-[180px]
+                     ${e.status === 'cancelled' ? 'line-through' : ''}">
+          ${e.description}
+        </span>
+        <div class="flex gap-1 mt-0.5">${payBadge}${natureBadge}</div>
+      </td>
+      <td class="px-4 py-3 text-[12px] text-gray-500 truncate">${catName}</td>
+      <td class="px-4 py-3 text-[12px] text-gray-500">${date}</td>
+      <td class="px-4 py-3">
+        <span class="text-[11px] px-2 py-0.5 rounded
+          ${isIncome ? 'bg-[#0a2e1a] text-[#1D9E75]' : 'bg-[#2a1a1a] text-[#E24B4A]'}">
+          ${isIncome ? 'entrada' : 'saída'}
+        </span>
+      </td>
+      <td class="px-4 py-3">
+        <span class="text-[11px] px-2 py-0.5 rounded ${STATUS_CLASS[e.status] || ''}">
+          ${STATUS_LABEL[e.status] || e.status}
+        </span>
+      </td>
+      <td class="px-4 py-3 text-right text-[13px] font-medium
+                 ${e.status === 'cancelled'
+                    ? 'line-through text-gray-600'
+                    : isIncome ? 'text-[#1D9E75]' : 'text-[#E24B4A]'}">
+        ${isIncome ? '+' : '-'} ${fmt(e.amount)}
+      </td>
+      <td class="px-4 py-3">
+        <div class="flex items-center justify-end gap-2">
+          <button onclick="openEditModal(${JSON.stringify(e).replace(/"/g,'&quot;')})"
+                  class="text-gray-600 hover:text-gray-300 transition-colors">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="1.5">
+              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+          </button>
+          <button onclick="openDeleteModal(${e.id}, ${e.parent_id ? 'true' : 'false'})"
+                  class="text-gray-600 hover:text-red-400 transition-colors">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="1.5">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6l-1 14H6L5 6"/>
+              <path d="M10 11v6M14 11v6M9 6V4h6v2"/>
+            </svg>
+          </button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── filtros ───────────────────────────────────────────────────────────────────
+function applyFilters() {
+  const type     = document.getElementById('filter-type').value;
+  const status   = document.getElementById('filter-status').value;
+  const category = document.getElementById('filter-category').value;
+  const start    = document.getElementById('filter-start').value;
+  const end      = document.getElementById('filter-end').value;
+
+  const params = new URLSearchParams();
+  if (start) params.set('start', start);
+  if (end)   params.set('end',   end);
+
+  loadExpenses(params.toString()).then(() => {
+    let filtered = allExpenses;
+    if (type)     filtered = filtered.filter(e => e.type === type);
+    if (status)   filtered = filtered.filter(e => e.status === status);
+    if (category) filtered = filtered.filter(e => e.category_id == category);
+    renderTable(filtered);
+  });
+}
+
+function clearFilters() {
+  ['filter-type','filter-status','filter-category','filter-start','filter-end']
+    .forEach(id => document.getElementById(id).value = '');
+  loadExpenses();
+}
+
+// ── modal abrir/fechar ────────────────────────────────────────────────────────
+function openModal() {
+  document.getElementById('expense-id').value         = '';
+  document.getElementById('modal-title').textContent  = 'Nova movimentação';
+  document.getElementById('f-description').value      = '';
+  document.getElementById('f-amount').value           = '';
+  document.getElementById('f-date').value             = new Date().toISOString().split('T')[0];
+  document.getElementById('f-category').value         = '';
+  document.getElementById('f-payment-type').value     = 'single';
+  document.getElementById('f-status').value           = 'paid';
+  document.getElementById('f-installments').value     = '';
+  document.getElementById('f-recurrence-end').value   = '';
+  document.getElementById('modal-error').classList.add('hidden');
+  setType('expense');
+  setNature('variable');
+  onPaymentTypeChange();
+  document.getElementById('modal-overlay').classList.replace('hidden','flex');
+}
+
+function openEditModal(e) {
+  document.getElementById('expense-id').value         = e.id;
+  document.getElementById('modal-title').textContent  = 'Editar movimentação';
+  document.getElementById('f-description').value      = e.description;
+  document.getElementById('f-amount').value           = e.amount;
+  document.getElementById('f-date').value             = e.date;
+  document.getElementById('f-category').value         = e.category_id || '';
+  document.getElementById('f-payment-type').value     = e.payment_type || 'single';
+  document.getElementById('f-status').value           = e.status || 'paid';
+  document.getElementById('modal-error').classList.add('hidden');
+  setType(e.type);
+  setNature(e.transaction_nature || 'variable');
+  onPaymentTypeChange();
+  document.getElementById('modal-overlay').classList.replace('hidden','flex');
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.replace('flex','hidden');
+}
+
+// ── setters de estado ─────────────────────────────────────────────────────────
+function setType(type) {
+  selectedType = type;
+  const active   = 'bg-brand text-white border-brand';
+  const inactive = 'bg-transparent text-gray-400 border-surface-border';
+  const income   = document.getElementById('btn-income');
+  const expense  = document.getElementById('btn-expense');
+  income.className  = income.className.replace(/bg-\S+|text-\S+|border-\S+/g,'').trim()
+    + ' ' + (type === 'income'  ? active : inactive);
+  expense.className = expense.className.replace(/bg-\S+|text-\S+|border-\S+/g,'').trim()
+    + ' ' + (type === 'expense' ? active : inactive);
+  // payment-section visível para ambos os tipos agora
+}
+
+function setNature(nature) {
+  selectedNature = nature;
+  const active   = 'border-brand bg-brand text-white';
+  const inactive = 'border-surface-border bg-transparent text-gray-400';
+  document.getElementById('btn-variable').className =
+    document.getElementById('btn-variable').className.replace(/border-\S+|bg-\S+|text-\S+/g,'').trim()
+    + ' ' + (nature === 'variable' ? active : inactive);
+  document.getElementById('btn-fixed').className =
+    document.getElementById('btn-fixed').className.replace(/border-\S+|bg-\S+|text-\S+/g,'').trim()
+    + ' ' + (nature === 'fixed' ? active : inactive);
+}
+
+function onPaymentTypeChange() {
+  const val = document.getElementById('f-payment-type').value;
+  document.getElementById('installment-section').classList.toggle('hidden', val !== 'installment');
+  document.getElementById('recurrence-section').classList.toggle('hidden',  val !== 'recurring');
+}
+
+// ── submit ────────────────────────────────────────────────────────────────────
+async function submitExpense() {
+  const id   = document.getElementById('expense-id').value;
+  const body = {
+    description:        document.getElementById('f-description').value.trim(),
+    amount:             parseFloat(document.getElementById('f-amount').value),
+    date:               document.getElementById('f-date').value,
+    type:               selectedType,
+    transaction_nature: selectedNature,
+    status:             document.getElementById('f-status').value,
+    category_id:        parseInt(document.getElementById('f-category').value) || null,
+    payment_type:       document.getElementById('f-payment-type').value,
+  };
+
+  if (body.payment_type === 'installment')
+    body.total_installments = parseInt(document.getElementById('f-installments').value);
+
+  if (body.payment_type === 'recurring') {
+    body.recurrence_type     = document.getElementById('f-recurrence-type').value;
+    body.recurrence_end_date = document.getElementById('f-recurrence-end').value || null;
+  }
+
+  const btn = document.getElementById('btn-submit');
+  btn.disabled = true;
+
+  try {
+    const res  = await fetch(id ? `/expenses/api/${id}` : '/expenses/api', {
+      method:  id ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showModalError(data.errors
+        ? Object.values(data.errors).flat().join(' ')
+        : data.error || 'Erro ao salvar.');
+    } else {
+      closeModal();
+      loadExpenses();
+    }
+  } catch(e) { showModalError('Erro de conexão.'); }
+  finally    { btn.disabled = false; }
+}
+
+function showModalError(msg) {
+  const el = document.getElementById('modal-error');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+
+// ── exclusão ──────────────────────────────────────────────────────────────────
+function openDeleteModal(id, hasParent) {
+  deleteTarget = id;
+  document.getElementById('delete-group-option').classList.toggle('hidden', !hasParent);
+  document.getElementById('delete-all-check').checked = false;
+  document.getElementById('delete-overlay').classList.replace('hidden','flex');
+}
+
+function closeDeleteModal() {
+  document.getElementById('delete-overlay').classList.replace('flex','hidden');
+  deleteTarget = null;
+}
+
+async function confirmDelete() {
+  const deleteAll = document.getElementById('delete-all-check').checked;
+  const res = await fetch(
+    `/expenses/api/${deleteTarget}${deleteAll ? '?all=true' : ''}`,
+    { method: 'DELETE' }
+  );
+  if (res.ok) { closeDeleteModal(); loadExpenses(); }
+}
+</script>
+{% endblock %}

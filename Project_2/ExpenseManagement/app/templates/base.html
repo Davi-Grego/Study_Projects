@@ -1,13 +1,263 @@
-<html>
-    <head>
-        <title>My App</title>
-    </head>
-    <body>
-        <header>
-            <h1>Hello {{ user_name }}</h1>
-        </header>
-        <main>
-            {% block content %}{% endblock %}
-        </main>
-    </body>
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}FinControl{% endblock %}</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand:   { DEFAULT: '#7F77DD', dark: '#534AB7' },
+            surface: { DEFAULT: '#1c1c1c', hover: '#242424', border: '#2e2e2e' },
+            bg:      '#0f0f0f',
+            sidebar: '#141414',
+          },
+          fontFamily: { sans: ['"DM Sans"', 'sans-serif'] },
+        },
+      },
+    }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
+
+  {% block extra_head %}{% endblock %}
+</head>
+
+<body class="h-full bg-bg font-sans text-gray-100 antialiased">
+
+  {# ── Overlay (mobile — fecha sidebar ao clicar fora) ── #}
+  <div id="sidebar-overlay"
+       class="fixed inset-0 z-20 bg-black/60 hidden lg:hidden"
+       onclick="closeSidebar()">
+  </div>
+
+  <div class="flex h-full">
+
+    {# ══════════════════════════════════════════════
+       SIDEBAR — visível em desktop, drawer no mobile
+       ══════════════════════════════════════════════ #}
+    <aside id="sidebar"
+           class="fixed inset-y-0 left-0 z-30 w-56 flex flex-col
+                  bg-sidebar border-r border-surface-border
+                  -translate-x-full transition-transform duration-200 ease-in-out
+                  lg:relative lg:translate-x-0 lg:flex">
+
+      {# Logo #}
+      <div class="flex items-center gap-3 px-5 py-5 border-b border-surface-border">
+        <div class="flex items-center justify-center w-8 h-8 rounded-lg
+                    bg-[#1a1a2e] border border-[#2a2a3e] shrink-0">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L3 7v10l9 5 9-5V7L12 2z"
+                  stroke="#7F77DD" stroke-width="1.5" stroke-linejoin="round"/>
+            <path d="M12 22V12M3 7l9 5 9-5"
+                  stroke="#7F77DD" stroke-width="1.5" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="text-[15px] font-medium text-gray-100">FinControl</span>
+
+        {# Botão fechar — só aparece no mobile #}
+        <button onclick="closeSidebar()"
+                class="ml-auto p-1 text-gray-500 hover:text-gray-300 lg:hidden">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      {# Navegação #}
+      <nav class="flex-1 py-4 overflow-y-auto">
+        <p class="px-5 mb-2 text-[10px] text-gray-600 uppercase tracking-widest">Menu</p>
+
+        {% set nav_items = [
+          ('main.dashboard',   'Dashboard',      'grid'),
+          ('expenses.index',   'Movimentações',  'arrow-left-right'),
+          ('goals.index',      'Metas',          'target'),
+          ('reports.index',    'Relatórios',     'bar-chart'),
+          ('categories.index', 'Categorias',     'tag'),
+        ] %}
+
+        {% for endpoint, label, icon in nav_items %}
+          {% set is_active = request.endpoint == endpoint %}
+          <a href="{{ url_for(endpoint) }}"
+             class="flex items-center gap-3 px-5 py-2.5 text-[13px] transition-colors
+                    {{ 'text-gray-100 bg-surface' if is_active else 'text-gray-500 hover:text-gray-300 hover:bg-surface/50' }}">
+
+            {# ícones inline #}
+            {% if icon == 'grid' %}
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="shrink-0"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            {% elif icon == 'arrow-left-right' %}
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="shrink-0"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>
+            {% elif icon == 'target' %}
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="shrink-0"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+            {% elif icon == 'bar-chart' %}
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="shrink-0"><path d="M3 3v18h18"/><path d="M7 16V10M12 16V6M17 16v-4"/></svg>
+            {% elif icon == 'tag' %}
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="shrink-0"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><circle cx="7" cy="7" r="1.5" fill="currentColor"/></svg>
+            {% endif %}
+
+            {{ label }}
+
+            {% if is_active %}
+              <span class="ml-auto w-1.5 h-1.5 rounded-full bg-brand"></span>
+            {% endif %}
+          </a>
+        {% endfor %}
+      </nav>
+
+      {# Usuário #}
+      <div class="px-5 py-4 border-t border-surface-border">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-full bg-[#1a1a2e] border border-[#2a2a3e]
+                      flex items-center justify-center text-[11px] text-brand font-medium shrink-0">
+            {{ session.get('name', 'U')[:2].upper() }}
+          </div>
+          <div class="min-w-0">
+            <p class="text-[13px] text-gray-300 truncate">{{ session.get('name', 'Usuário') }}</p>
+            <p class="text-[11px] text-gray-600 truncate">{{ session.get('email', '') }}</p>
+          </div>
+          <a href="{{ url_for('auth.logout') }}"
+             class="ml-auto p-1 text-gray-600 hover:text-gray-400 transition-colors shrink-0"
+             title="Sair">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="1.5">
+              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    {# ══════════════════════════════════════════════
+       CONTEÚDO PRINCIPAL
+       ══════════════════════════════════════════════ #}
+    <div class="flex flex-col flex-1 min-w-0 overflow-hidden">
+
+      {# Topbar mobile — só aparece em telas pequenas #}
+      <header class="flex items-center justify-between px-4 py-3
+                     border-b border-surface-border bg-sidebar lg:hidden">
+        <button onclick="openSidebar()"
+                class="p-1.5 text-gray-400 hover:text-gray-200 transition-colors">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="1.5">
+            <path d="M3 12h18M3 6h18M3 18h18"/>
+          </svg>
+        </button>
+
+        <div class="flex items-center gap-2">
+          <div class="w-6 h-6 rounded-md bg-[#1a1a2e] border border-[#2a2a3e]
+                      flex items-center justify-center">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L3 7v10l9 5 9-5V7L12 2z"
+                    stroke="#7F77DD" stroke-width="1.5" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <span class="text-[14px] font-medium text-gray-100">FinControl</span>
+        </div>
+
+        <div class="w-8"></div>{# espaçador para centralizar logo #}
+      </header>
+
+      {# Flash messages #}
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="px-4 pt-3 flex flex-col gap-2">
+            {% for category, message in messages %}
+              <div data-flash
+                   class="px-4 py-2.5 rounded-lg text-sm border transition-opacity
+                   {% if category in ['danger', 'error'] %}bg-red-950 border-red-800 text-red-300
+                   {% elif category == 'success' %}bg-green-950 border-green-800 text-green-300
+                   {% elif category == 'warning' %}bg-yellow-950 border-yellow-800 text-yellow-300
+                   {% else %}bg-surface border-surface-border text-gray-300{% endif %}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {# Conteúdo da página #}
+      <main class="flex-1 overflow-y-auto pb-20 lg:pb-0">
+        {% block content %}{% endblock %}
+      </main>
+
+    </div>{# fim conteúdo principal #}
+  </div>{# fim flex wrapper #}
+
+  {# ══════════════════════════════════════════════
+     BOTTOM NAV — só no mobile
+     ══════════════════════════════════════════════ #}
+  <nav class="fixed bottom-0 inset-x-0 z-10 bg-sidebar border-t border-surface-border
+              flex items-center justify-around px-2 py-2 lg:hidden">
+
+    {% set bottom_items = [
+      ('main.dashboard',   'Início',   'grid'),
+      ('expenses.index',   'Transações','arrow-left-right'),
+      ('goals.index',      'Metas',    'target'),
+      ('reports.index',    'Relatórios','bar-chart'),
+      ('categories.index', 'Categorias','tag'),
+    ] %}
+
+    {% for endpoint, label, icon in bottom_items %}
+      {% set is_active = request.endpoint == endpoint %}
+      <a href="{{ url_for(endpoint) }}"
+         class="flex flex-col items-center gap-1 px-3 py-1 rounded-lg transition-colors
+                {{ 'text-brand' if is_active else 'text-gray-600 hover:text-gray-400' }}">
+
+        {% if icon == 'grid' %}
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        {% elif icon == 'arrow-left-right' %}
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>
+        {% elif icon == 'target' %}
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        {% elif icon == 'bar-chart' %}
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 16V10M12 16V6M17 16v-4"/></svg>
+        {% elif icon == 'tag' %}
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><circle cx="7" cy="7" r="1.5" fill="currentColor"/></svg>
+        {% endif %}
+
+        <span class="text-[10px] font-medium">{{ label }}</span>
+      </a>
+    {% endfor %}
+  </nav>
+
+  {# ── Scripts globais ── #}
+  <script>
+    function openSidebar() {
+      document.getElementById('sidebar').classList.remove('-translate-x-full');
+      document.getElementById('sidebar-overlay').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebar() {
+      document.getElementById('sidebar').classList.add('-translate-x-full');
+      document.getElementById('sidebar-overlay').classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+
+    // fecha sidebar ao navegar (mobile)
+    document.querySelectorAll('#sidebar a').forEach(a => {
+      a.addEventListener('click', () => {
+        if (window.innerWidth < 1024) closeSidebar();
+      });
+    });
+
+    // auto-dismiss flash messages
+    setTimeout(() => {
+      document.querySelectorAll('[data-flash]').forEach(el => {
+        el.style.opacity = '0';
+        el.style.transition = 'opacity 0.3s';
+        setTimeout(() => el.remove(), 300);
+      });
+    }, 3500);
+  </script>
+
+  {% block extra_scripts %}{% endblock %}
+</body>
 </html>

@@ -1,6 +1,7 @@
 from app.extensions import db
 from app.models import Expense
 from datetime import date
+from sqlalchemy import extract
 
 
 class ExpenseRepository:
@@ -36,7 +37,6 @@ class ExpenseRepository:
     @staticmethod
     def get_by_month(user_id: int, year: int, month: int) -> list[Expense]:
         """Movimentações de um mês específico. RF012 / RN002."""
-        from sqlalchemy import extract
         return (
             Expense.query
             .filter(
@@ -55,6 +55,77 @@ class ExpenseRepository:
             Expense.query
             .filter_by(user_id=user_id, category_id=category_id)
             .order_by(Expense.date.desc())
+            .all()
+        )
+
+    @staticmethod
+    def get_paid_by_month(user_id: int, year: int, month: int) -> list[Expense]:
+        """Movimentações pagas de um mês — para saldo real."""
+        return (
+            Expense.query
+            .filter(
+                Expense.user_id == user_id,
+                Expense.status  == 'paid',
+                extract('year',  Expense.date) == year,
+                extract('month', Expense.date) == month,
+            )
+            .all()
+        )
+
+    @staticmethod
+    def get_active_by_month(user_id: int, year: int, month: int) -> list[Expense]:
+        """Movimentações paid + pending de um mês — para saldo estimado."""
+        return (
+            Expense.query
+            .filter(
+                Expense.user_id == user_id,
+                Expense.status  != 'cancelled',
+                extract('year',  Expense.date) == year,
+                extract('month', Expense.date) == month,
+            )
+            .all()
+        )
+
+    @staticmethod
+    def get_paid_before_month(user_id: int, year: int, month: int) -> list[Expense]:
+        """
+        Todas as movimentações pagas de meses anteriores ao informado.
+        Usada para calcular o saldo acumulado.
+        """
+        return (
+            Expense.query
+            .filter(
+                Expense.user_id == user_id,
+                Expense.status  == 'paid',
+                db.or_(
+                    extract('year', Expense.date) < year,
+                    db.and_(
+                        extract('year',  Expense.date) == year,
+                        extract('month', Expense.date) <  month,
+                    )
+                )
+            )
+            .all()
+        )
+
+    @staticmethod
+    def get_paid_all(user_id: int) -> list[Expense]:
+        """Todas as movimentações pagas — para saldo real total."""
+        return (
+            Expense.query
+            .filter_by(user_id=user_id, status='paid')
+            .all()
+        )
+
+    @staticmethod
+    def get_active_all(user_id: int) -> list[Expense]:
+        """Todas as movimentações não canceladas — para saldo estimado total."""
+        return (
+            Expense.query
+            .filter(
+                Expense.user_id == user_id,
+                Expense.status  != 'cancelled',
+            )
             .all()
         )
 
@@ -82,6 +153,11 @@ class ExpenseRepository:
 
     @staticmethod
     def delete_many(expenses: list[Expense]) -> None:
+        # quebra a auto-referência antes de deletar
+        for expense in expenses:
+            expense.parent_id = None
+        db.session.flush()  # persiste os NULLs sem commitar ainda
+
         for expense in expenses:
             db.session.delete(expense)
         db.session.commit()

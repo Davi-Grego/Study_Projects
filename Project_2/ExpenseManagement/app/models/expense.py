@@ -29,7 +29,9 @@ class Expense(db.Model):
     is_recurring        = db.Column(db.Boolean, default=False)
     recurrence_type     = db.Column(db.String(20), nullable=True)      # 'monthly' | 'weekly' | 'yearly'
     recurrence_end_date = db.Column(db.Date, nullable=True)            # None = indeterminado
-
+    transaction_nature = db.Column(db.String(10), nullable=False, default='variable')
+    status = db.Column(db.String(20), nullable=False, default='paid', server_default='paid')
+    
     # Agrupa parcelas e recorrências pelo ID da primeira entrada
     parent_id   = db.Column(db.Integer, db.ForeignKey("expenses.id"), nullable=True)
     children    = db.relationship("Expense", backref=db.backref("parent", remote_side=[id]), lazy=True)
@@ -50,7 +52,9 @@ class Expense(db.Model):
             'is_recurring':        self.is_recurring,
             'recurrence_type':     self.recurrence_type,
             'recurrence_end_date': self.recurrence_end_date.isoformat() if self.recurrence_end_date else None,
+            'transaction_nature':  self.transaction_nature,
             'category_id':         self.category_id,
+            'status':              self.status,
             'user_id':             self.user_id,
             'parent_id':           self.parent_id,
             'created_at':          self.created_at.isoformat(),
