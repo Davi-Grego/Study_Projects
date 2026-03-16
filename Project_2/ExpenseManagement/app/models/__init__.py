@@ -1,4 +1,6 @@
-from .user import User
-from .expense import Expense    
+from .user     import User, get_user_name
 from .category import Category
-from .goal import Goal
+from .expense  import Expense
+from .goal     import Goal
+
+__all__ = ['User', 'get_user_name', 'Category', 'Expense', 'Goal']
